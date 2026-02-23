@@ -1,16 +1,9 @@
 let magnifierEnabled = false;
-let magnifier, viewportClone, lastMouseEvent;
+let magnifier = null;
+let viewportClone = null;
 
-let zoom = 2;
-let lensSize = 150;
-
-// New: HUD + rAF mouse throttling
-let hudEl = null;
-let rafPending = false;
-
-// New: refresh control
-let refreshTimer = null;
-let lastRefreshAt = 0;
+const ZOOM = 2;
+const LENS_SIZE = 180;
 
 const ext = chrome;
 
@@ -29,246 +22,92 @@ function enableMagnifier() {
 
   magnifier = document.createElement("div");
   magnifier.id = "magnifier";
-
-  // New: a11y + don't get focused/clicked
   magnifier.setAttribute("aria-hidden", "true");
   magnifier.tabIndex = -1;
 
-  // New: HUD (zoom/size/help)
-  hudEl = document.createElement("div");
-  hudEl.id = "magnifier__hud";
-  hudEl.setAttribute("aria-hidden", "true");
-  magnifier.appendChild(hudEl);
-
-  // CHANGED: restore DOM clone container
   viewportClone = document.createElement("div");
   viewportClone.id = "magnifier__clone";
   viewportClone.setAttribute("aria-hidden", "true");
 
-  const clonedBody = document.body
-    ? document.body.cloneNode(true)
-    : document.documentElement.cloneNode(true);
-  viewportClone.appendChild(clonedBody);
+  // Clone the *whole* document element (more reliable than cloning body).
+  const root = document.documentElement.cloneNode(true);
 
+  // Reduce side-effects: avoid duplicate IDs + inline handler execution surfaces.
+  sanitizeClone(root);
+
+  viewportClone.appendChild(root);
   magnifier.appendChild(viewportClone);
+
+  // Attach to documentElement as fallback if body isn't available yet.
   (document.body || document.documentElement).appendChild(magnifier);
 
-  setLensSize(lensSize);
-  updateHud();
-  syncMagnifier();
+  magnifier.style.width = `${LENS_SIZE}px`;
+  magnifier.style.height = `${LENS_SIZE}px`;
 
-  // New: throttle mousemove work to animation frames
   document.addEventListener("mousemove", onMouseMove, { passive: true });
-
-  // New: wheel to zoom
-  document.addEventListener("wheel", onWheel, { passive: false });
-
-  window.addEventListener("scroll", syncMagnifier, { passive: true });
-  window.addEventListener("resize", syncMagnifier, { passive: true });
-
-  // CHANGED: re-enable clone refresh hooks
-  window.addEventListener("hashchange", refreshClone, { passive: true });
-  window.addEventListener("popstate", refreshClone, { passive: true });
-
-  document.addEventListener("keydown", onKeyDown);
-
-  // New: disable periodic cloning by default (manual R still works)
-  stopAutoRefresh();
-
-  if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-  syncMagnifier();
+  document.addEventListener("keydown", onKeyDown, { passive: true });
 }
 
 function disableMagnifier() {
+  document.removeEventListener("mousemove", onMouseMove);
+  document.removeEventListener("keydown", onKeyDown);
+
   if (magnifier) magnifier.remove();
   magnifier = null;
   viewportClone = null;
-  hudEl = null;
-
-  document.removeEventListener("mousemove", onMouseMove);
-  document.removeEventListener("wheel", onWheel);
-  window.removeEventListener("scroll", syncMagnifier);
-  window.removeEventListener("resize", syncMagnifier);
-  window.removeEventListener("hashchange", refreshClone);
-  window.removeEventListener("popstate", refreshClone);
-  document.removeEventListener("keydown", onKeyDown);
-
-  stopAutoRefresh();
-}
-
-// New: rAF mouse handler
-function onMouseMove(e) {
-  lastMouseEvent = e;
-  if (rafPending) return;
-  rafPending = true;
-  requestAnimationFrame(() => {
-    rafPending = false;
-    if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-  });
 }
 
 function onKeyDown(e) {
   if (e.key === "Escape" && magnifierEnabled) {
     magnifierEnabled = false;
     disableMagnifier();
-    return;
-  }
-
-  if (!magnifierEnabled) return;
-
-  const fast = e.shiftKey ? 2 : 1;
-
-  // Zoom hotkeys
-  if (e.key === "=" || e.key === "+") {
-    setZoom(zoom + 0.25 * fast);
-    return;
-  }
-  if (e.key === "-" || e.key === "_") {
-    setZoom(zoom - 0.25 * fast);
-    return;
-  }
-
-  // Lens size hotkeys
-  if (e.key === "]") {
-    setLensSize(lensSize + 20 * fast);
-    return;
-  }
-  if (e.key === "[") {
-    setLensSize(lensSize - 20 * fast);
-    return;
-  }
-
-  // Manual refresh
-  if (e.key.toLowerCase() === "r") {
-    refreshClone();
   }
 }
 
-// Replaces fixed getZoom()
-function getZoom() {
-  return zoom;
+function onMouseMove(e) {
+  moveMagnifier(e);
 }
 
-function setZoom(next) {
-  zoom = clamp(next, 1, 6);
-  syncMagnifier();
-  updateHud();
-  if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-}
+function moveMagnifier(e) {
+  if (!magnifier || !viewportClone) return;
 
-function setLensSize(nextPx) {
-  lensSize = clamp(nextPx, 80, 400);
-  if (!magnifier) return;
-  magnifier.style.width = lensSize + "px";
-  magnifier.style.height = lensSize + "px";
-  updateHud();
-  if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-}
+  const half = LENS_SIZE / 2;
+  const x = clamp(e.clientX, half, window.innerWidth - half);
+  const y = clamp(e.clientY, half, window.innerHeight - half);
 
-function updateHud() {
-  if (!hudEl) return;
-  hudEl.textContent = `Zoom: ${zoom.toFixed(2)}x  Size: ${Math.round(lensSize)}  (Wheel/+/- , [ ] , R refresh , Esc)`;
-}
+  magnifier.style.left = `${x}px`;
+  magnifier.style.top = `${y}px`;
 
-function onWheel(e) {
-  if (!magnifierEnabled) return;
+  const pageX = e.clientX + window.scrollX;
+  const pageY = e.clientY + window.scrollY;
 
-  // Ctrl/Meta wheel commonly maps to page zoom; don't fight it.
-  if (e.ctrlKey || e.metaKey) return;
+  const tx = -(pageX * ZOOM - half);
+  const ty = -(pageY * ZOOM - half);
 
-  // Only engage zooming when pointer is within the lens area
-  // (prevents surprising page scroll behavior everywhere).
-  if (!magnifier) return;
-  const rect = magnifier.getBoundingClientRect();
-  const inLens =
-    e.clientX >= rect.left &&
-    e.clientX <= rect.right &&
-    e.clientY >= rect.top &&
-    e.clientY <= rect.bottom;
-
-  if (!inLens) return;
-
-  e.preventDefault();
-
-  const fast = e.shiftKey ? 2 : 1;
-  const direction = e.deltaY < 0 ? 1 : -1;
-  setZoom(zoom + direction * 0.15 * fast);
+  viewportClone.style.transformOrigin = "top left";
+  viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${ZOOM})`;
 }
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function syncMagnifier() {
-  // CHANGED: clone-based mode just needs correct origin; scaling happens in moveMagnifier()
-  if (!viewportClone) return;
-  viewportClone.style.transformOrigin = "top left";
-}
+function sanitizeClone(rootEl) {
+  if (!rootEl?.querySelectorAll) return;
 
-function moveMagnifier(e) {
-  // CHANGED: restore clone-based transform math
-  if (!magnifier || !viewportClone) return;
+  // Remove ids to avoid duplicates. Remove inline on* handlers to prevent surprises.
+  const all = rootEl.querySelectorAll("*");
+  for (const el of all) {
+    if (el.id) el.removeAttribute("id");
 
-  const halfW = magnifier.offsetWidth / 2;
-  const halfH = magnifier.offsetHeight / 2;
-
-  const x = clamp(e.clientX, halfW, window.innerWidth - halfW);
-  const y = clamp(e.clientY, halfH, window.innerHeight - halfH);
-
-  magnifier.style.left = x + "px";
-  magnifier.style.top = y + "px";
-
-  const z = getZoom();
-  const pageX = e.clientX + window.scrollX;
-  const pageY = e.clientY + window.scrollY;
-
-  const tx = -(pageX * z - halfW);
-  const ty = -(pageY * z - halfH);
-
-  viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`;
-}
-
-function refreshClone() {
-  // CHANGED: restore real refresh (rebuild snapshot clone)
-  if (!magnifierEnabled || !viewportClone) return;
-
-  const now = Date.now();
-  if (now - lastRefreshAt < 500) return;
-  lastRefreshAt = now;
-
-  const prevDisplay = magnifier?.style?.display;
-  if (magnifier) magnifier.style.display = "none";
-
-  try {
-    viewportClone.replaceChildren();
-    const clonedBody = document.body
-      ? document.body.cloneNode(true)
-      : document.documentElement.cloneNode(true);
-    viewportClone.appendChild(clonedBody);
-  } finally {
-    if (magnifier) magnifier.style.display = prevDisplay || "";
+    // Copy attribute names first; then remove inline handlers.
+    for (const attr of Array.from(el.attributes)) {
+      if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+    }
   }
-
-  syncMagnifier();
-  if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-}
-
-function startAutoRefresh() {
-  stopAutoRefresh();
-  // Keep available for users who want it later; disabled by default in enableMagnifier().
-  refreshTimer = setInterval(() => {
-    refreshClone();
-  }, 5000);
-}
-
-function stopAutoRefresh() {
-  if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = null;
-  lastRefreshAt = 0;
 }
 
 // Allow programmatic toggling when injected via chrome.scripting.executeScript.
-// (Used by background.js; avoids popup + avoids sendMessage dependency.)
 globalThis.__magnifierToggle = () => {
   magnifierEnabled = !magnifierEnabled;
   magnifierEnabled ? enableMagnifier() : disableMagnifier();

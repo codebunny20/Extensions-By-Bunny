@@ -1,39 +1,24 @@
 #magnifier {
   position: fixed;
-  width: 150px;
-  height: 150px;
+  left: 0;
+  top: 0;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 3px solid #fff;
   overflow: hidden;
+
+  /* Don't block interaction with the real page */
   pointer-events: none;
+
+  /* Center lens on the computed left/top */
   transform: translate(-50%, -50%);
-  z-index: 999999;
 
-  /* CHANGED: revert to clone-based magnifier (reliable); no backdrop magnify */
+  z-index: 2147483647;
   background: rgba(0, 0, 0, 0.06);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-
-  /* Keep smooth motion */
   will-change: left, top;
 }
 
-/* CHANGED: do NOT hide the clone; remove the "display:none" behavior */
-#magnifier > div,
-#magnifier__clone,
-#magnifier__clone *,
-#magnifier__clone > body,
-#magnifier__clone > html {
-  display: unset !important;
-}
-
-/* CHANGED: ensure cloned subtree doesn't capture interactions */
-#magnifier__clone,
-#magnifier__clone * {
-  pointer-events: none !important;
-}
-
-/* Restore clone container behavior (this is the actual magnified view) */
 #magnifier__clone {
   position: absolute;
   left: 0;
@@ -42,27 +27,8 @@
   will-change: transform;
 }
 
-/* Keep HUD visible above the lens; allow it to render even though clone is hidden */
-#magnifier__hud {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 8px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Optional: fallback if magnify() isn't supported (shows blurred glass instead of zoom) */
-@supports not ((backdrop-filter: magnify(2)) or (-webkit-backdrop-filter: magnify(2))) {
-  #magnifier {
-    background: rgba(0, 0, 0, 0.06);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-  }
+/* Ensure the cloned subtree never captures interactions */
+#magnifier__clone,
+#magnifier__clone * {
+  pointer-events: none !important;
 }

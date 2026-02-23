@@ -2,7 +2,7 @@
 
 A minimal Manifest V3 browser extension that overlays a circular “magnifying glass” on the current page and lets you toggle it on/off from the extension’s toolbar icon.
 
-It works by rendering a scaled “snapshot clone” of the page content inside a fixed, circular overlay and translating that clone so the area under your cursor appears magnified.
+It works by rendering a scaled “snapshot clone” of the page inside a fixed, circular overlay and translating that clone so the area under your cursor appears magnified.
 
 ---
 
@@ -10,11 +10,8 @@ It works by rendering a scaled “snapshot clone” of the page content inside a
 
 - **Toggle on/off** by clicking the extension **action (toolbar) icon**
 - **Magnified circular lens** that follows the mouse
-- **Adjustable zoom** (mouse wheel over lens, or keyboard)
-- **Adjustable lens size** (keyboard)
 - **Clamped to viewport** (lens won’t go off-screen)
 - **Escape key** disables the magnifier
-- **Lens HUD** showing zoom/size + quick controls
 - Designed to **silently fail on restricted pages** (e.g. `chrome://`)
 
 ---
@@ -24,12 +21,12 @@ It works by rendering a scaled “snapshot clone” of the page content inside a
 When enabled, the content script creates:
 
 - `#magnifier`: a fixed-position circular container (the “lens”)
-- `#magnifier__clone`: a container holding a deep clone of the page’s `<body>`
+- `#magnifier__clone`: a container holding a deep clone of the page’s document (`<html>`)
 
 The clone is then:
 
-1. **Scaled up** (zoom factor, currently `2x`)
-2. **Translated** (via negative margins) so the point under the cursor is centered in the lens
+1. **Scaled up** (fixed zoom factor)
+2. **Translated** so the point under the cursor is centered in the lens
 
 So instead of zooming the real page, it zooms a copied DOM view inside the overlay.
 
@@ -157,12 +154,8 @@ Not used (“Popup disabled”). There is no popup UI; toggling happens via tool
 
 ### Controls (while enabled)
 
-- **Mouse wheel over the lens**: zoom in/out  
-  - Hold **Shift** to adjust faster
+- **Mouse**: move to reposition the lens
 - **Keyboard**:
-  - `+` / `-`: zoom in/out
-  - `[` / `]`: decrease/increase lens size
-  - `R`: refresh the cloned snapshot (helps on dynamic pages)
   - `Esc`: disable
 
 ---
@@ -173,16 +166,13 @@ Not used (“Popup disabled”). There is no popup UI; toggling happens via tool
 - The magnifier shows a **cloned snapshot of the DOM**, not a true optical zoom:
   - dynamic content may not perfectly match after it changes
   - embedded video/canvas/etc. may not render as expected inside the clone
-- The magnifier no longer does aggressive periodic cloning by default (performance); use **R** to refresh when needed.
-- Zoom is **adjustable** while enabled (wheel or `+`/`-`).
 
 ---
 
 ## Customization
 
-- **Lens size**: change `#magnifier { width/height: 150px; }` in `magnify.css`
-- **Zoom**: change `getZoom()` in `content.js`
-- **Border/background**: adjust `#magnifier` styles (border color, thickness, background)
+- **Lens size / Zoom**: edit `LENS_SIZE` / `ZOOM` near the top of `content.js`
+- **Border/background**: adjust `#magnifier` styles in `magnify.css`
 
 ---
 
