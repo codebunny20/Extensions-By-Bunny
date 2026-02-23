@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Magnifier Toggle",
+  "version": "1.0",
+  "action": {
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["magnify.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

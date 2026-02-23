@@ -1,0 +1,41 @@
+#magnifier {
+  position: fixed;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid white;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(0px);
+}
+
+#magnifier > div {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  transform: scale(2);
+  transform-origin: top left;
+}
+
+#magnifier__clone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* New: ensure the cloned subtree doesn't capture interactions */
+#magnifier__clone * {
+  pointer-events: none !important;
+}
+
+#magnifier__clone > body,
+#magnifier__clone > html {
+  width: 100vw;
+  min-height: 100vh;
+}
