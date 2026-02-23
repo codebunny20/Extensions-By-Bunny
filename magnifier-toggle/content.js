@@ -40,9 +40,17 @@ function enableMagnifier() {
   hudEl.setAttribute("aria-hidden", "true");
   magnifier.appendChild(hudEl);
 
-  // CHANGED: no more DOM cloning; keep variable but don't create/append clone nodes
-  viewportClone = null;
+  // CHANGED: restore DOM clone container
+  viewportClone = document.createElement("div");
+  viewportClone.id = "magnifier__clone";
+  viewportClone.setAttribute("aria-hidden", "true");
 
+  const clonedBody = document.body
+    ? document.body.cloneNode(true)
+    : document.documentElement.cloneNode(true);
+  viewportClone.appendChild(clonedBody);
+
+  magnifier.appendChild(viewportClone);
   (document.body || document.documentElement).appendChild(magnifier);
 
   setLensSize(lensSize);
@@ -58,9 +66,9 @@ function enableMagnifier() {
   window.addEventListener("scroll", syncMagnifier, { passive: true });
   window.addEventListener("resize", syncMagnifier, { passive: true });
 
-  // CHANGED: disable clone refresh hooks (not needed for backdrop-filter lens)
-  window.removeEventListener("hashchange", refreshClone);
-  window.removeEventListener("popstate", refreshClone);
+  // CHANGED: re-enable clone refresh hooks
+  window.addEventListener("hashchange", refreshClone, { passive: true });
+  window.addEventListener("popstate", refreshClone, { passive: true });
 
   document.addEventListener("keydown", onKeyDown);
 
@@ -68,6 +76,7 @@ function enableMagnifier() {
   stopAutoRefresh();
 
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
+  syncMagnifier();
 }
 
 function disableMagnifier() {
@@ -191,16 +200,14 @@ function clamp(n, min, max) {
 }
 
 function syncMagnifier() {
-  // CHANGED: apply magnification to the lens itself
-  if (!magnifier) return;
-
-  const z = getZoom();
-  magnifier.style.webkitBackdropFilter = `magnify(${z})`;
-  magnifier.style.backdropFilter = `magnify(${z})`;
+  // CHANGED: clone-based mode just needs correct origin; scaling happens in moveMagnifier()
+  if (!viewportClone) return;
+  viewportClone.style.transformOrigin = "top left";
 }
 
 function moveMagnifier(e) {
-  if (!magnifier) return;
+  // CHANGED: restore clone-based transform math
+  if (!magnifier || !viewportClone) return;
 
   const halfW = magnifier.offsetWidth / 2;
   const halfH = magnifier.offsetHeight / 2;
@@ -211,22 +218,37 @@ function moveMagnifier(e) {
   magnifier.style.left = x + "px";
   magnifier.style.top = y + "px";
 
-  // CHANGED: drive backdrop translation so the point under cursor is centered in lens
-  // translate values are in CSS pixels; magnify() scales what's behind the element.
   const z = getZoom();
   const pageX = e.clientX + window.scrollX;
   const pageY = e.clientY + window.scrollY;
 
-  const tx = -(pageX - halfW);
-  const ty = -(pageY - halfH);
+  const tx = -(pageX * z - halfW);
+  const ty = -(pageY * z - halfH);
 
-  const filter = `magnify(${z}) translate(${tx}px, ${ty}px)`;
-  magnifier.style.webkitBackdropFilter = filter;
-  magnifier.style.backdropFilter = filter;
+  viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`;
 }
 
 function refreshClone() {
-  // CHANGED: no-op (clone removed). Keep hotkey without breaking.
+  // CHANGED: restore real refresh (rebuild snapshot clone)
+  if (!magnifierEnabled || !viewportClone) return;
+
+  const now = Date.now();
+  if (now - lastRefreshAt < 500) return;
+  lastRefreshAt = now;
+
+  const prevDisplay = magnifier?.style?.display;
+  if (magnifier) magnifier.style.display = "none";
+
+  try {
+    viewportClone.replaceChildren();
+    const clonedBody = document.body
+      ? document.body.cloneNode(true)
+      : document.documentElement.cloneNode(true);
+    viewportClone.appendChild(clonedBody);
+  } finally {
+    if (magnifier) magnifier.style.display = prevDisplay || "";
+  }
+
   syncMagnifier();
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
 }

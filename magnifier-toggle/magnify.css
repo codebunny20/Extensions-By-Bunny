@@ -9,23 +9,37 @@
   transform: translate(-50%, -50%);
   z-index: 999999;
 
-  /* CHANGED: make it actually "see-through" */
-  background: transparent;
+  /* CHANGED: revert to clone-based magnifier (reliable); no backdrop magnify */
+  background: rgba(0, 0, 0, 0.06);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 
-  /* CHANGED: use real lens magnification of what's behind the element */
-  -webkit-backdrop-filter: magnify(2);
-  backdrop-filter: magnify(2);
-
-  /* Smoother motion */
-  will-change: left, top, -webkit-backdrop-filter, backdrop-filter;
+  /* Keep smooth motion */
+  will-change: left, top;
 }
 
+/* CHANGED: do NOT hide the clone; remove the "display:none" behavior */
 #magnifier > div,
 #magnifier__clone,
 #magnifier__clone *,
 #magnifier__clone > body,
 #magnifier__clone > html {
-  display: none !important;
+  display: unset !important;
+}
+
+/* CHANGED: ensure cloned subtree doesn't capture interactions */
+#magnifier__clone,
+#magnifier__clone * {
+  pointer-events: none !important;
+}
+
+/* Restore clone container behavior (this is the actual magnified view) */
+#magnifier__clone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+  will-change: transform;
 }
 
 /* Keep HUD visible above the lens; allow it to render even though clone is hidden */
