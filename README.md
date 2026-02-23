@@ -14,6 +14,7 @@ It works by rendering a scaled “snapshot clone” of the page content inside a
 - **Adjustable lens size** (keyboard)
 - **Clamped to viewport** (lens won’t go off-screen)
 - **Escape key** disables the magnifier
+- **Lens HUD** showing zoom/size + quick controls
 - Designed to **silently fail on restricted pages** (e.g. `chrome://`)
 
 ---
@@ -172,6 +173,7 @@ Not used (“Popup disabled”). There is no popup UI; toggling happens via tool
 - The magnifier shows a **cloned snapshot of the DOM**, not a true optical zoom:
   - dynamic content may not perfectly match after it changes
   - embedded video/canvas/etc. may not render as expected inside the clone
+- The magnifier no longer does aggressive periodic cloning by default (performance); use **R** to refresh when needed.
 - Zoom is **adjustable** while enabled (wheel or `+`/`-`).
 
 ---

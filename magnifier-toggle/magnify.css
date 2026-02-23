@@ -10,6 +10,8 @@
   z-index: 999999;
   background: rgba(0, 0, 0, 0.06);
   backdrop-filter: blur(0px);
+  /* New: smoother motion */
+  will-change: left, top;
 }
 
 #magnifier > div {
@@ -27,6 +29,8 @@
   top: 0;
   will-change: transform;
   pointer-events: none;
+  /* New: hint GPU for transform */
+  will-change: transform;
 }
 
 /* New: ensure the cloned subtree doesn't capture interactions */
@@ -38,4 +42,20 @@
 #magnifier__clone > html {
   width: 100vw;
   min-height: 100vh;
+}
+
+/* New: in-lens HUD */
+#magnifier__hud {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 1;
 }

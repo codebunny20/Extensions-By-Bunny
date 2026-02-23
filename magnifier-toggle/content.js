@@ -1,9 +1,12 @@
 let magnifierEnabled = false;
 let magnifier, viewportClone, lastMouseEvent;
 
-// New: runtime settings (per-page session)
 let zoom = 2;
 let lensSize = 150;
+
+// New: HUD + rAF mouse throttling
+let hudEl = null;
+let rafPending = false;
 
 // New: refresh control
 let refreshTimer = null;
@@ -27,6 +30,16 @@ function enableMagnifier() {
   magnifier = document.createElement("div");
   magnifier.id = "magnifier";
 
+  // New: a11y + don't get focused/clicked
+  magnifier.setAttribute("aria-hidden", "true");
+  magnifier.tabIndex = -1;
+
+  // New: HUD (zoom/size/help)
+  hudEl = document.createElement("div");
+  hudEl.id = "magnifier__hud";
+  hudEl.setAttribute("aria-hidden", "true");
+  magnifier.appendChild(hudEl);
+
   viewportClone = document.createElement("div");
   viewportClone.id = "magnifier__clone";
   viewportClone.setAttribute("aria-hidden", "true");
@@ -38,20 +51,26 @@ function enableMagnifier() {
   magnifier.appendChild(viewportClone);
   (document.body || document.documentElement).appendChild(magnifier);
 
-  // New: apply initial size
   setLensSize(lensSize);
+  updateHud();
 
-  document.addEventListener("mousemove", moveMagnifier, { passive: true });
+  // New: throttle mousemove work to animation frames
+  document.addEventListener("mousemove", onMouseMove, { passive: true });
 
   // New: wheel to zoom
   document.addEventListener("wheel", onWheel, { passive: false });
 
   window.addEventListener("scroll", syncMagnifier, { passive: true });
   window.addEventListener("resize", syncMagnifier, { passive: true });
+
+  // New: refresh clone on big layout changes (cheap triggers)
+  window.addEventListener("hashchange", refreshClone, { passive: true });
+  window.addEventListener("popstate", refreshClone, { passive: true });
+
   document.addEventListener("keydown", onKeyDown);
 
-  // New: lightweight auto-refresh while enabled
-  startAutoRefresh();
+  // New: disable periodic cloning by default (manual R still works)
+  stopAutoRefresh();
 
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
   syncMagnifier();
@@ -61,14 +80,28 @@ function disableMagnifier() {
   if (magnifier) magnifier.remove();
   magnifier = null;
   viewportClone = null;
+  hudEl = null;
 
-  document.removeEventListener("mousemove", moveMagnifier);
+  document.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("wheel", onWheel);
   window.removeEventListener("scroll", syncMagnifier);
   window.removeEventListener("resize", syncMagnifier);
+  window.removeEventListener("hashchange", refreshClone);
+  window.removeEventListener("popstate", refreshClone);
   document.removeEventListener("keydown", onKeyDown);
 
   stopAutoRefresh();
+}
+
+// New: rAF mouse handler
+function onMouseMove(e) {
+  lastMouseEvent = e;
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    rafPending = false;
+    if (lastMouseEvent) moveMagnifier(lastMouseEvent);
+  });
 }
 
 function onKeyDown(e) {
@@ -116,6 +149,7 @@ function getZoom() {
 function setZoom(next) {
   zoom = clamp(next, 1, 6);
   syncMagnifier();
+  updateHud();
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
 }
 
@@ -124,7 +158,13 @@ function setLensSize(nextPx) {
   if (!magnifier) return;
   magnifier.style.width = lensSize + "px";
   magnifier.style.height = lensSize + "px";
+  updateHud();
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
+}
+
+function updateHud() {
+  if (!hudEl) return;
+  hudEl.textContent = `Zoom: ${zoom.toFixed(2)}x  Size: ${Math.round(lensSize)}  (Wheel/+/- , [ ] , R refresh , Esc)`;
 }
 
 function onWheel(e) {
@@ -165,7 +205,6 @@ function syncMagnifier() {
 
 function moveMagnifier(e) {
   if (!magnifier || !viewportClone) return;
-  lastMouseEvent = e;
 
   const halfW = magnifier.offsetWidth / 2;
   const halfH = magnifier.offsetHeight / 2;
@@ -180,7 +219,6 @@ function moveMagnifier(e) {
   const pageX = e.clientX + window.scrollX;
   const pageY = e.clientY + window.scrollY;
 
-  // New: use translate + scale (GPU-friendly) instead of marginLeft/marginTop
   const tx = -(pageX * z - halfW);
   const ty = -(pageY * z - halfH);
   viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`;
@@ -194,9 +232,17 @@ function refreshClone() {
   if (now - lastRefreshAt < 500) return;
   lastRefreshAt = now;
 
-  viewportClone.replaceChildren();
-  const clonedBody = document.body ? document.body.cloneNode(true) : document.documentElement.cloneNode(true);
-  viewportClone.appendChild(clonedBody);
+  // New: prevent cloning the overlay into itself (and avoid runaway trees)
+  const prevDisplay = magnifier?.style?.display;
+  if (magnifier) magnifier.style.display = "none";
+
+  try {
+    viewportClone.replaceChildren();
+    const clonedBody = document.body ? document.body.cloneNode(true) : document.documentElement.cloneNode(true);
+    viewportClone.appendChild(clonedBody);
+  } finally {
+    if (magnifier) magnifier.style.display = prevDisplay || "";
+  }
 
   // Re-apply immediately so the refreshed clone tracks correctly.
   syncMagnifier();
@@ -205,11 +251,10 @@ function refreshClone() {
 
 function startAutoRefresh() {
   stopAutoRefresh();
-  // Periodic refresh helps with DOM changes (SPAs, live content). Keep it conservative.
+  // Keep available for users who want it later; disabled by default in enableMagnifier().
   refreshTimer = setInterval(() => {
-    // Only refresh if enabled + page likely changed (simple heuristic: time-based only).
     refreshClone();
-  }, 2500);
+  }, 5000);
 }
 
 function stopAutoRefresh() {
