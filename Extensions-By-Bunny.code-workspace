@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Extensions-By-Bunny",
+			"path": "."
+		},
+		{
+			"name": "My diy extensions",
+			"path": "../../My diy extensions"
+		}
+	],
+	"settings": {}
+}
