@@ -40,19 +40,14 @@ function enableMagnifier() {
   hudEl.setAttribute("aria-hidden", "true");
   magnifier.appendChild(hudEl);
 
-  viewportClone = document.createElement("div");
-  viewportClone.id = "magnifier__clone";
-  viewportClone.setAttribute("aria-hidden", "true");
+  // CHANGED: no more DOM cloning; keep variable but don't create/append clone nodes
+  viewportClone = null;
 
-  // Cheaper than cloning <html>: clone only the body snapshot (visual-only).
-  const clonedBody = document.body ? document.body.cloneNode(true) : document.documentElement.cloneNode(true);
-  viewportClone.appendChild(clonedBody);
-
-  magnifier.appendChild(viewportClone);
   (document.body || document.documentElement).appendChild(magnifier);
 
   setLensSize(lensSize);
   updateHud();
+  syncMagnifier();
 
   // New: throttle mousemove work to animation frames
   document.addEventListener("mousemove", onMouseMove, { passive: true });
@@ -63,9 +58,9 @@ function enableMagnifier() {
   window.addEventListener("scroll", syncMagnifier, { passive: true });
   window.addEventListener("resize", syncMagnifier, { passive: true });
 
-  // New: refresh clone on big layout changes (cheap triggers)
-  window.addEventListener("hashchange", refreshClone, { passive: true });
-  window.addEventListener("popstate", refreshClone, { passive: true });
+  // CHANGED: disable clone refresh hooks (not needed for backdrop-filter lens)
+  window.removeEventListener("hashchange", refreshClone);
+  window.removeEventListener("popstate", refreshClone);
 
   document.addEventListener("keydown", onKeyDown);
 
@@ -73,7 +68,6 @@ function enableMagnifier() {
   stopAutoRefresh();
 
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
-  syncMagnifier();
 }
 
 function disableMagnifier() {
@@ -197,14 +191,16 @@ function clamp(n, min, max) {
 }
 
 function syncMagnifier() {
-  if (!viewportClone) return;
+  // CHANGED: apply magnification to the lens itself
+  if (!magnifier) return;
 
-  // New: keep only transformOrigin here; scaling happens in moveMagnifier transform.
-  viewportClone.style.transformOrigin = "top left";
+  const z = getZoom();
+  magnifier.style.webkitBackdropFilter = `magnify(${z})`;
+  magnifier.style.backdropFilter = `magnify(${z})`;
 }
 
 function moveMagnifier(e) {
-  if (!magnifier || !viewportClone) return;
+  if (!magnifier) return;
 
   const halfW = magnifier.offsetWidth / 2;
   const halfH = magnifier.offsetHeight / 2;
@@ -215,36 +211,22 @@ function moveMagnifier(e) {
   magnifier.style.left = x + "px";
   magnifier.style.top = y + "px";
 
+  // CHANGED: drive backdrop translation so the point under cursor is centered in lens
+  // translate values are in CSS pixels; magnify() scales what's behind the element.
   const z = getZoom();
   const pageX = e.clientX + window.scrollX;
   const pageY = e.clientY + window.scrollY;
 
-  const tx = -(pageX * z - halfW);
-  const ty = -(pageY * z - halfH);
-  viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`;
+  const tx = -(pageX - halfW);
+  const ty = -(pageY - halfH);
+
+  const filter = `magnify(${z}) translate(${tx}px, ${ty}px)`;
+  magnifier.style.webkitBackdropFilter = filter;
+  magnifier.style.backdropFilter = filter;
 }
 
 function refreshClone() {
-  if (!magnifierEnabled || !viewportClone) return;
-
-  const now = Date.now();
-  // Throttle refresh to avoid doing this too often on hot sites.
-  if (now - lastRefreshAt < 500) return;
-  lastRefreshAt = now;
-
-  // New: prevent cloning the overlay into itself (and avoid runaway trees)
-  const prevDisplay = magnifier?.style?.display;
-  if (magnifier) magnifier.style.display = "none";
-
-  try {
-    viewportClone.replaceChildren();
-    const clonedBody = document.body ? document.body.cloneNode(true) : document.documentElement.cloneNode(true);
-    viewportClone.appendChild(clonedBody);
-  } finally {
-    if (magnifier) magnifier.style.display = prevDisplay || "";
-  }
-
-  // Re-apply immediately so the refreshed clone tracks correctly.
+  // CHANGED: no-op (clone removed). Keep hotkey without breaking.
   syncMagnifier();
   if (lastMouseEvent) moveMagnifier(lastMouseEvent);
 }

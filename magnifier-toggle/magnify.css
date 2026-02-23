@@ -8,43 +8,27 @@
   pointer-events: none;
   transform: translate(-50%, -50%);
   z-index: 999999;
-  background: rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(0px);
-  /* New: smoother motion */
-  will-change: left, top;
+
+  /* CHANGED: make it actually "see-through" */
+  background: transparent;
+
+  /* CHANGED: use real lens magnification of what's behind the element */
+  -webkit-backdrop-filter: magnify(2);
+  backdrop-filter: magnify(2);
+
+  /* Smoother motion */
+  will-change: left, top, -webkit-backdrop-filter, backdrop-filter;
 }
 
-#magnifier > div {
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform;
-  transform: scale(2);
-  transform-origin: top left;
-}
-
-#magnifier__clone {
-  position: absolute;
-  left: 0;
-  top: 0;
-  will-change: transform;
-  pointer-events: none;
-  /* New: hint GPU for transform */
-  will-change: transform;
-}
-
-/* New: ensure the cloned subtree doesn't capture interactions */
-#magnifier__clone * {
-  pointer-events: none !important;
-}
-
+#magnifier > div,
+#magnifier__clone,
+#magnifier__clone *,
 #magnifier__clone > body,
 #magnifier__clone > html {
-  width: 100vw;
-  min-height: 100vh;
+  display: none !important;
 }
 
-/* New: in-lens HUD */
+/* Keep HUD visible above the lens; allow it to render even though clone is hidden */
 #magnifier__hud {
   position: absolute;
   left: 8px;
@@ -58,4 +42,13 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
   pointer-events: none;
   z-index: 1;
+}
+
+/* Optional: fallback if magnify() isn't supported (shows blurred glass instead of zoom) */
+@supports not ((backdrop-filter: magnify(2)) or (-webkit-backdrop-filter: magnify(2))) {
+  #magnifier {
+    background: rgba(0, 0, 0, 0.06);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
 }
