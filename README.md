@@ -190,3 +190,9 @@ Not used (“Popup disabled”). There is no popup UI; toggling happens via tool
   - Try a normal site (not `chrome://...`)
   - Ensure the extension is enabled
   - Check the Extensions page for errors (service worker logging)
+
+
+## Please Note
+
+I am still learning and im going to be fixing the stupid newbie bugs 
+  Im not the sharpest tool in the shed.
