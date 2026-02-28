@@ -14,13 +14,21 @@ let captureTimer = null;
 let captureInFlight = false;
 let captureQueued = false;
 
+// Debounce capture requests triggered by high-frequency events
+const CAPTURE_DEBOUNCE_MS = 50;
+let captureDebounceId = 0;
+
+function setEnabled(next) {
+  const n = Boolean(next);
+  if (n === magnifierEnabled) return;
+  magnifierEnabled = n;
+  magnifierEnabled ? enableMagnifier() : disableMagnifier();
+}
+
 // Guard in case this script ever runs outside extension context
 if (ext?.runtime?.onMessage) {
   ext.runtime.onMessage.addListener((msg) => {
-    if (msg.action === "toggleMagnifier") {
-      magnifierEnabled = !magnifierEnabled;
-      magnifierEnabled ? enableMagnifier() : disableMagnifier();
-    }
+    if (msg.action === "toggleMagnifier") setEnabled(!magnifierEnabled);
   });
 }
 
@@ -48,6 +56,7 @@ function enableMagnifier() {
 
   document.addEventListener("mousemove", onMouseMove, { passive: true });
   document.addEventListener("keydown", onKeyDown, { passive: true });
+  document.addEventListener("visibilitychange", onVisibilityChange, { passive: true });
   window.addEventListener("scroll", onScrollOrResize, { passive: true });
   window.addEventListener("resize", onScrollOrResize, { passive: true });
 
@@ -57,16 +66,21 @@ function enableMagnifier() {
   const initX = lastMouse?.clientX ?? window.innerWidth / 2;
   const initY = lastMouse?.clientY ?? window.innerHeight / 2;
   moveAndRender(initX, initY);
-  requestCaptureOnce();
+  requestCaptureSoon();
 }
 
 function disableMagnifier() {
   document.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("keydown", onKeyDown);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
   window.removeEventListener("scroll", onScrollOrResize);
   window.removeEventListener("resize", onScrollOrResize);
 
   stopCaptureLoop();
+  if (captureDebounceId) clearTimeout(captureDebounceId);
+  captureDebounceId = 0;
+  captureInFlight = false;
+  captureQueued = false;
 
   if (magnifier) magnifier.remove();
   magnifier = null;
@@ -74,22 +88,30 @@ function disableMagnifier() {
 }
 
 function onKeyDown(e) {
-  if (e.key === "Escape" && magnifierEnabled) {
-    magnifierEnabled = false;
-    disableMagnifier();
-  }
+  if (e.key === "Escape") setEnabled(false);
 }
 
 function onMouseMove(e) {
   lastMouse = e;
   moveAndRender(e.clientX, e.clientY);
-  requestCaptureOnce();
+  requestCaptureSoon();
 }
 
 function onScrollOrResize() {
   // Screenshot changes on scroll; refresh + re-render at last position.
-  requestCaptureOnce();
+  requestCaptureSoon();
   if (lastMouse) moveAndRender(lastMouse.clientX, lastMouse.clientY);
+}
+
+function onVisibilityChange() {
+  // Don't keep capturing in background tabs.
+  if (!magnifierEnabled) return;
+  if (document.hidden) {
+    stopCaptureLoop();
+  } else {
+    startCaptureLoop();
+    requestCaptureSoon();
+  }
 }
 
 function moveAndRender(clientX, clientY) {
@@ -99,8 +121,15 @@ function moveAndRender(clientX, clientY) {
   const x = clamp(clientX, half, window.innerWidth - half);
   const y = clamp(clientY, half, window.innerHeight - half);
 
-  magnifier.style.left = `${x}px`;
-  magnifier.style.top = `${y}px`;
+  // Avoid extra layout/style churn
+  if (magnifier._mx !== x) {
+    magnifier._mx = x;
+    magnifier.style.left = `${x}px`;
+  }
+  if (magnifier._my !== y) {
+    magnifier._my = y;
+    magnifier.style.top = `${y}px`;
+  }
 
   // Ensure screenshot matches viewport size (captureVisibleTab returns viewport image)
   const w = window.innerWidth;
@@ -122,6 +151,7 @@ function moveAndRender(clientX, clientY) {
 
 function startCaptureLoop() {
   stopCaptureLoop();
+  if (document.hidden) return;
   captureTimer = setInterval(() => requestCaptureOnce(), CAPTURE_MS);
 }
 
@@ -130,8 +160,18 @@ function stopCaptureLoop() {
   captureTimer = null;
 }
 
+function requestCaptureSoon() {
+  if (!magnifierEnabled) return;
+  if (captureDebounceId) return;
+  captureDebounceId = setTimeout(() => {
+    captureDebounceId = 0;
+    requestCaptureOnce();
+  }, CAPTURE_DEBOUNCE_MS);
+}
+
 function requestCaptureOnce() {
   if (!magnifierEnabled || !viewportClone) return;
+  if (document.hidden) return;
 
   if (captureInFlight) {
     captureQueued = true;
@@ -158,7 +198,4 @@ function clamp(n, min, max) {
 }
 
 // Allow programmatic toggling when injected via chrome.scripting.executeScript.
-globalThis.__magnifierToggle = () => {
-  magnifierEnabled = !magnifierEnabled;
-  magnifierEnabled ? enableMagnifier() : disableMagnifier();
-};
+globalThis.__magnifierToggle = () => setEnabled(!magnifierEnabled);

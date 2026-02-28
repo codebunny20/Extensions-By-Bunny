@@ -8,10 +8,15 @@ A simple Opera browser extension that overlays a magnifying glass on the current
 - **Magnified circular lens** that follows the mouse.
 - **Clamped to viewport** (lens won’t go off-screen).
 - **Escape key** disables the magnifier.
+- Uses **live viewport screenshots** (`captureVisibleTab`) so it can magnify rendered content (video/canvas/etc).
+- **Pauses capturing** when the tab is hidden (saves resources).
 
 ## How it Works
 
-When enabled, the content script creates a circular overlay that follows the mouse cursor and displays a zoomed-in view of the area under the cursor.
+When enabled:
+- The content script creates a circular overlay with an `<img>` inside it.
+- The background service worker provides a **data URL screenshot** of the visible tab (`chrome.tabs.captureVisibleTab`).
+- The `<img>` is scaled and translated so the area under the cursor appears magnified.
 
 ## File Structure
 
@@ -41,7 +46,7 @@ opera-magnifying-glass
 
 ## Limitations
 
-- Some pages may block content scripts and/or injection (e.g., internal browser pages). On those pages, clicking the icon will do nothing.
+- Some pages may block screenshots and/or injection (e.g., internal browser pages). On those pages, clicking the icon will do nothing (or the lens may not update).
 
 ## Customization
 

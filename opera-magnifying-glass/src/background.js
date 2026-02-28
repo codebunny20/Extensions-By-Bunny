@@ -30,9 +30,15 @@ chrome.action.onClicked.addListener(async (tab) => {
 // Provide live screenshots to the content script via captureVisibleTab.
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.action !== "magnifier:capture") return;
-  if (!sender?.tab?.windowId) return;
 
-  chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "png" }, (dataUrl) => {
+  const windowId = sender?.tab?.windowId;
+  if (typeof windowId !== "number") {
+    sendResponse({ ok: false, dataUrl: null });
+    return;
+  }
+
+  chrome.tabs.captureVisibleTab(windowId, { format: "png" }, (dataUrl) => {
+    // captureVisibleTab can return undefined on restricted pages or transient states
     sendResponse({ ok: Boolean(dataUrl), dataUrl: dataUrl || null });
   });
 
