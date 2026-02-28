@@ -27,12 +27,16 @@ const FOLLOW = 0.22;
 // avoid infinite tiny moves
 const EPS = 0.1;
 
+function setMagnifierEnabled(next) {
+  magnifierEnabled = Boolean(next);
+  magnifierEnabled ? enableMagnifier() : disableMagnifier();
+}
+
 // Guard in case this script ever runs outside extension context
 if (ext?.runtime?.onMessage) {
   ext.runtime.onMessage.addListener((msg) => {
     if (msg.action === "toggleMagnifier") {
-      magnifierEnabled = !magnifierEnabled;
-      magnifierEnabled ? enableMagnifier() : disableMagnifier();
+      setMagnifierEnabled(!magnifierEnabled);
     }
   });
 }
@@ -95,8 +99,7 @@ function disableMagnifier() {
 
 function onKeyDown(e) {
   if (e.key === "Escape" && magnifierEnabled) {
-    magnifierEnabled = false;
-    disableMagnifier();
+    setMagnifierEnabled(false);
   }
 }
 
@@ -241,6 +244,5 @@ function requestCaptureOnce() {
 
 // Allow programmatic toggling when injected via chrome.scripting.executeScript.
 globalThis.__magnifierToggle = () => {
-  magnifierEnabled = !magnifierEnabled;
-  magnifierEnabled ? enableMagnifier() : disableMagnifier();
+  setMagnifierEnabled(!magnifierEnabled);
 };
