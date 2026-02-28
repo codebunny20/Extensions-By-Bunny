@@ -1,0 +1,20 @@
+{
+    "manifest_version": 3,
+    "name": "Sticky Notes Anywhere",
+    "version": "1.0",
+    "description": "Place draggable sticky notes on any webpage.",
+    "permissions": ["storage", "scripting", "activeTab"],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_title": "Add Sticky Note"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "css": ["notes.css"]
+      }
+    ]
+  }
