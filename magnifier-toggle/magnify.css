@@ -23,6 +23,11 @@
   position: absolute;
   left: 0;
   top: 0;
+
+  /* Make sure transforms apply to the whole cloned document */
+  width: max-content;
+  height: max-content;
+
   transform-origin: top left;
   will-change: transform;
 }
