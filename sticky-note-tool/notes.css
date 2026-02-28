@@ -1,13 +1,48 @@
 .sticky-note {
-    position: fixed;
-    width: 180px;
-    min-height: 120px;
-    background: #fff8a6;
-    border: 1px solid #e0d98c;
-    padding: 10px;
-    font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    cursor: move;
-    z-index: 999999;
-    border-radius: 6px;
-  }
+  position: fixed;
+  width: 180px;
+  min-height: 120px;
+  background: #fff8a6;
+  border: 1px solid #e0d98c;
+  padding: 0; /* header + body handle their own padding */
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  z-index: 2147483646;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sticky-note__header {
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 6px;
+  background: rgba(0, 0, 0, 0.04);
+  cursor: move;
+  user-select: none;
+}
+
+.sticky-note__close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.sticky-note__close:hover {
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.sticky-note__body {
+  padding: 10px;
+  min-height: 94px;
+  outline: none;
+  cursor: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

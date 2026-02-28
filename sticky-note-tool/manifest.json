@@ -3,12 +3,12 @@
     "name": "Sticky Notes Anywhere",
     "version": "1.0",
     "description": "Place draggable sticky notes on any webpage.",
-    "permissions": ["storage", "scripting", "activeTab"],
+    "permissions": ["storage", "activeTab"],
     "background": {
       "service_worker": "background.js"
     },
     "action": {
-      "default_popup": "popup.html",
+      "default_popup": "pop.html",
       "default_title": "Sticky Notes"
     },
     "content_scripts": [
