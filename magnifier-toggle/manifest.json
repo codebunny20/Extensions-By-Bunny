@@ -2,12 +2,17 @@
   "manifest_version": 3,
   "name": "Magnifier Toggle",
   "version": "1.0",
-  "action": {},
+  "action": {
+    "default_icon": "icon.jpg"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "permissions": ["activeTab", "scripting", "tabs"],
   "host_permissions": ["<all_urls>"],
+  "icons": {
+    "128": "icon.jpg"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
