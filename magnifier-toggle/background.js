@@ -5,12 +5,28 @@ chrome.action.onClicked.addListener(async (tab) => {
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
-        // If content script ran, use its toggle; otherwise, do nothing.
-        // (Content scripts may be blocked on some internal/restricted pages.)
         globalThis.__magnifierToggle?.();
       }
     });
   } catch {
-    // Ignore failures on restricted pages (e.g., chrome://, opera://, extension gallery).
+    // Ignore failures on restricted pages.
   }
+});
+
+// Provide live screenshots to the content script.
+// Uses captureVisibleTab => captures what is actually painted (video/canvas/etc).
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.action !== "magnifier:capture") return;
+  if (!sender?.tab?.windowId) return;
+
+  chrome.tabs.captureVisibleTab(
+    sender.tab.windowId,
+    { format: "png" },
+    (dataUrl) => {
+      sendResponse({ ok: Boolean(dataUrl), dataUrl: dataUrl || null });
+    }
+  );
+
+  // Keep the message channel open for async response
+  return true;
 });

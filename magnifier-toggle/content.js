@@ -1,9 +1,13 @@
 let magnifierEnabled = false;
 let magnifier = null;
-let viewportClone = null;
+let viewportClone = null; // will be the <img>
+let captureTimer = null;
+let lastMouse = null;
 
 const ZOOM = 2;
 const LENS_SIZE = 180;
+// lower = smoother but more CPU; higher = more lag but cheaper
+const CAPTURE_MS = 120;
 
 const ext = chrome;
 
@@ -25,27 +29,15 @@ function enableMagnifier() {
   magnifier.setAttribute("aria-hidden", "true");
   magnifier.tabIndex = -1;
 
-  viewportClone = document.createElement("div");
+  // Use an IMG backed by captureVisibleTab instead of cloning the DOM.
+  viewportClone = document.createElement("img");
   viewportClone.id = "magnifier__clone";
   viewportClone.setAttribute("aria-hidden", "true");
+  viewportClone.alt = "";
+  viewportClone.decoding = "async";
+  viewportClone.loading = "eager";
 
-  // Prefer cloning BODY to avoid re-applying HEAD/CSS that can distort the view.
-  // Fallback to documentElement only if body isn't available.
-  const sourceRoot = document.body || document.documentElement;
-  const root = sourceRoot.cloneNode(true);
-
-  // Remove our own overlay from the clone (prevents recursive/duplicated lens content)
-  // and reduces side effects.
-  removeFromClone(root, "#magnifier");
-  removeFromClone(root, "#magnifier__clone");
-
-  // Reduce side-effects: avoid duplicate IDs + inline handler execution surfaces.
-  sanitizeClone(root);
-
-  viewportClone.appendChild(root);
   magnifier.appendChild(viewportClone);
-
-  // Attach to body when possible.
   (document.body || document.documentElement).appendChild(magnifier);
 
   magnifier.style.width = `${LENS_SIZE}px`;
@@ -53,11 +45,19 @@ function enableMagnifier() {
 
   document.addEventListener("mousemove", onMouseMove, { passive: true });
   document.addEventListener("keydown", onKeyDown, { passive: true });
+  window.addEventListener("scroll", onScrollOrResize, { passive: true });
+  window.addEventListener("resize", onScrollOrResize, { passive: true });
+
+  startCaptureLoop();
 }
 
 function disableMagnifier() {
   document.removeEventListener("mousemove", onMouseMove);
   document.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener("scroll", onScrollOrResize);
+  window.removeEventListener("resize", onScrollOrResize);
+
+  stopCaptureLoop();
 
   if (magnifier) magnifier.remove();
   magnifier = null;
@@ -72,7 +72,14 @@ function onKeyDown(e) {
 }
 
 function onMouseMove(e) {
+  lastMouse = e;
   moveMagnifier(e);
+}
+
+function onScrollOrResize() {
+  // Keep position correct and refresh capture after scroll/resize changes.
+  if (lastMouse) moveMagnifier(lastMouse);
+  requestCaptureOnce();
 }
 
 function moveMagnifier(e) {
@@ -85,12 +92,13 @@ function moveMagnifier(e) {
   magnifier.style.left = `${x}px`;
   magnifier.style.top = `${y}px`;
 
-  const pageX = e.clientX + window.scrollX;
-  const pageY = e.clientY + window.scrollY;
+  // We are panning a screenshot of the *viewport* (client coords),
+  // so do NOT add scrollX/scrollY here.
+  const tx = -(e.clientX * ZOOM - half);
+  const ty = -(e.clientY * ZOOM - half);
 
-  const tx = -(pageX * ZOOM - half);
-  const ty = -(pageY * ZOOM - half);
-
+  viewportClone.style.width = `${window.innerWidth}px`;
+  viewportClone.style.height = `${window.innerHeight}px`;
   viewportClone.style.transformOrigin = "top left";
   viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${ZOOM})`;
 }
@@ -99,23 +107,44 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function sanitizeClone(rootEl) {
-  if (!rootEl?.querySelectorAll) return;
+function startCaptureLoop() {
+  stopCaptureLoop();
+  requestCaptureOnce();
 
-  // Remove ids to avoid duplicates. Remove inline on* handlers to prevent surprises.
-  const all = rootEl.querySelectorAll("*");
-  for (const el of all) {
-    if (el.id) el.removeAttribute("id");
-
-    for (const attr of Array.from(el.attributes)) {
-      if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
-    }
-  }
+  captureTimer = setInterval(() => {
+    requestCaptureOnce();
+  }, CAPTURE_MS);
 }
 
-function removeFromClone(rootEl, selector) {
-  if (!rootEl?.querySelectorAll) return;
-  for (const el of rootEl.querySelectorAll(selector)) el.remove();
+function stopCaptureLoop() {
+  if (captureTimer) clearInterval(captureTimer);
+  captureTimer = null;
+}
+
+let captureInFlight = false;
+let captureQueued = false;
+
+function requestCaptureOnce() {
+  if (!magnifierEnabled || !viewportClone) return;
+
+  if (captureInFlight) {
+    captureQueued = true;
+    return;
+  }
+
+  captureInFlight = true;
+  ext.runtime.sendMessage({ action: "magnifier:capture" }, (res) => {
+    captureInFlight = false;
+
+    if (res?.ok && res.dataUrl && viewportClone) {
+      viewportClone.src = res.dataUrl;
+    }
+
+    if (captureQueued) {
+      captureQueued = false;
+      requestCaptureOnce();
+    }
+  });
 }
 
 // Allow programmatic toggling when injected via chrome.scripting.executeScript.
