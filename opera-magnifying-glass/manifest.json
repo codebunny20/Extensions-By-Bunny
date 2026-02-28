@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Opera Magnifying Glass",
+  "version": "1.0",
+  "description": "A simple magnifying glass extension for Opera that allows users to zoom in on areas of the webpage.",
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "css": ["src/magnifier.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {}
+}
