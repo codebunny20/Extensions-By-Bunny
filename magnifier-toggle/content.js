@@ -29,8 +29,15 @@ function enableMagnifier() {
   viewportClone.id = "magnifier__clone";
   viewportClone.setAttribute("aria-hidden", "true");
 
-  // Clone the *whole* document element (more reliable than cloning body).
-  const root = document.documentElement.cloneNode(true);
+  // Prefer cloning BODY to avoid re-applying HEAD/CSS that can distort the view.
+  // Fallback to documentElement only if body isn't available.
+  const sourceRoot = document.body || document.documentElement;
+  const root = sourceRoot.cloneNode(true);
+
+  // Remove our own overlay from the clone (prevents recursive/duplicated lens content)
+  // and reduces side effects.
+  removeFromClone(root, "#magnifier");
+  removeFromClone(root, "#magnifier__clone");
 
   // Reduce side-effects: avoid duplicate IDs + inline handler execution surfaces.
   sanitizeClone(root);
@@ -38,7 +45,7 @@ function enableMagnifier() {
   viewportClone.appendChild(root);
   magnifier.appendChild(viewportClone);
 
-  // Attach to documentElement as fallback if body isn't available yet.
+  // Attach to body when possible.
   (document.body || document.documentElement).appendChild(magnifier);
 
   magnifier.style.width = `${LENS_SIZE}px`;
@@ -100,11 +107,15 @@ function sanitizeClone(rootEl) {
   for (const el of all) {
     if (el.id) el.removeAttribute("id");
 
-    // Copy attribute names first; then remove inline handlers.
     for (const attr of Array.from(el.attributes)) {
       if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
     }
   }
+}
+
+function removeFromClone(rootEl, selector) {
+  if (!rootEl?.querySelectorAll) return;
+  for (const el of rootEl.querySelectorAll(selector)) el.remove();
 }
 
 // Allow programmatic toggling when injected via chrome.scripting.executeScript.

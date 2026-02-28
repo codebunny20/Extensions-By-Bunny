@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Magnifier Toggle",
   "version": "1.0",
-  "action": {
+  "action": { 
   },
   "background": {
     "service_worker": "background.js"
