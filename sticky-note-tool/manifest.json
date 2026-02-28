@@ -8,7 +8,8 @@
       "service_worker": "background.js"
     },
     "action": {
-      "default_title": "Add Sticky Note"
+      "default_popup": "popup.html",
+      "default_title": "Sticky Notes"
     },
     "content_scripts": [
       {
