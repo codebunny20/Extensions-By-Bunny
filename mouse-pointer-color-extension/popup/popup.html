@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mouse Pointer Color</title>
+    <style>
+      body { font: 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 12px; width: 220px; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0; }
+      input[type="color"] { width: 44px; height: 28px; padding: 0; border: none; background: none; }
+      label { user-select: none; }
+      button { width: 100%; padding: 8px 10px; }
+      .muted { color: #666; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <label for="enabled">Enabled</label>
+      <input id="enabled" type="checkbox" />
+    </div>
+
+    <div class="row">
+      <label for="color">Color</label>
+      <input id="color" type="color" value="#ff0000" />
+    </div>
+
+    <button id="apply">Apply to current tab</button>
+    <div class="muted">Note: sites can override cursors in iframes.</div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
