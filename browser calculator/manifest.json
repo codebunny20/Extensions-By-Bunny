@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "In Browser Calculator",
-  "version": "1.0.0",
-  "description": "A simple calculator extension popup.",
+  "name": "Modern Calculator",
+  "version": "1.0",
+  "description": "A clean, modern calculator popup.",
   "action": {
-    "default_title": "Calculator",
-    "default_popup": "ui.html"
+    "default_popup": "popup.html",
+    "default_title": "Calculator"
   }
 }
