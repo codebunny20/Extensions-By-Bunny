@@ -12,28 +12,6 @@ const historyList = document.getElementById("historyList");
 let currentInput = "";
 let history = [];
 
-// ===== History Drawer Helpers (collapse/expand) =====
-function isHistoryOpen() {
-    return historyDrawer.classList.contains("open");
-}
-
-function openHistory() {
-    if (isHistoryOpen()) return;
-    historyDrawer.classList.add("open");
-    saveDrawerState();
-}
-
-function closeHistory() {
-    if (!isHistoryOpen()) return;
-    historyDrawer.classList.remove("open");
-    saveDrawerState();
-}
-
-function toggleHistory() {
-    historyDrawer.classList.toggle("open");
-    saveDrawerState();
-}
-
 // ===== Load Persistent Data =====
 chrome.storage.sync.get(["history", "drawerOpen"], (data) => {
     if (data.history) {
@@ -79,7 +57,6 @@ function renderHistory() {
         div.addEventListener("click", () => {
             currentInput = item.split("=")[1].trim();
             updateDisplay();
-            closeHistory(); // collapse after selecting an item
         });
         historyList.appendChild(div);
     });
@@ -133,33 +110,14 @@ copyBtn.addEventListener("click", () => {
 });
 
 // ===== Toggle History Drawer =====
-historyToggle.addEventListener("click", (e) => {
-    e.stopPropagation(); // don't let it trigger the outside-click closer
-    toggleHistory();
-});
-
-// ===== Collapse History Drawer on Outside Click =====
-document.addEventListener("click", (e) => {
-    if (!isHistoryOpen()) return;
-
-    // If click is NOT inside the drawer and NOT on the toggle button, close it
-    const clickedInsideDrawer = historyDrawer.contains(e.target);
-    const clickedToggle = historyToggle.contains(e.target);
-
-    if (!clickedInsideDrawer && !clickedToggle) {
-        closeHistory();
-    }
+historyToggle.addEventListener("click", () => {
+    historyDrawer.classList.toggle("open");
+    saveDrawerState();
 });
 
 // ===== Keyboard Input =====
 document.addEventListener("keydown", (e) => {
     const key = e.key;
-
-    // Esc closes history drawer
-    if (key === "Escape") {
-        closeHistory();
-        return;
-    }
 
     // Numbers
     if (!isNaN(key)) {
