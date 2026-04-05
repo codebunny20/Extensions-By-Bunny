@@ -166,6 +166,98 @@ document.addEventListener("click", (e) => {
     }
 });
 
+// ===== Helpers to keep expression valid =====
+const OPS = new Set(["+", "-", "*", "/"]);
+
+function lastChar(str) {
+  return str ? str[str.length - 1] : "";
+}
+
+function isOperator(ch) {
+  return OPS.has(ch);
+}
+
+function appendValue(value) {
+  // Only allow known-safe characters
+  if (!/^[0-9.+\-*/]$/.test(value)) return;
+
+  const last = lastChar(currentInput);
+
+  // Don't start with +,*,/ (allow leading minus)
+  if (!currentInput && (value === "+" || value === "*" || value === "/")) return;
+
+  // Replace operator if last char is already an operator (prevents 5++2)
+  if (isOperator(value) && isOperator(last)) {
+    currentInput = currentInput.slice(0, -1) + value;
+    updateDisplay();
+    return;
+  }
+
+  // Prevent multiple decimals in the current number segment
+  if (value === ".") {
+    // get last number chunk after the last operator
+    const parts = currentInput.split(/[\+\-\*\/]/);
+    const lastChunk = parts[parts.length - 1] ?? "";
+    if (lastChunk.includes(".")) return;
+
+    // if chunk is empty, prepend 0 (so ".5" becomes "0.5")
+    if (!lastChunk) currentInput += "0";
+  }
+
+  currentInput += value;
+  updateDisplay();
+}
+
+function canEvaluate(expr) {
+  if (!expr) return false;
+
+  // expression should not end with an operator or dot
+  const end = lastChar(expr);
+  if (isOperator(end) || end === ".") return false;
+
+  // allow only digits/operators/dots/spaces (no letters, no parentheses here)
+  if (!/^[0-9+\-*/. ]+$/.test(expr)) return false;
+
+  return true;
+}
+
+function evaluateExpression(expr) {
+  // Evaluate in strict mode; input is already restricted by canEvaluate/appendValue
+  return Function(`"use strict"; return (${expr});`)();
+}
+
+// ===== Handle Button Clicks =====
+buttons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const value = btn.dataset.value;
+    if (!value) return;
+    appendValue(value);
+  });
+});
+
+// ===== Equals Button =====
+equalsBtn.addEventListener("click", () => {
+  if (!canEvaluate(currentInput)) {
+    // give a consistent feedback but don't blow away input
+    display.textContent = "Error";
+    setTimeout(updateDisplay, 400);
+    return;
+  }
+
+  try {
+    const expression = currentInput;
+    const result = evaluateExpression(expression);
+
+    addToHistory(expression, result);
+    currentInput = String(result);
+    updateDisplay();
+  } catch (err) {
+    console.error("Calculator evaluation failed:", err, "expr:", currentInput);
+    display.textContent = "Error";
+    setTimeout(updateDisplay, 400);
+  }
+});
+
 // ===== Keyboard Input =====
 document.addEventListener("keydown", (e) => {
     const key = e.key;
