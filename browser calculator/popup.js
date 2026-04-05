@@ -8,6 +8,21 @@ const historyToggle = document.getElementById("historyToggle");
 const historyDrawer = document.getElementById("historyDrawer");
 const historyList = document.getElementById("historyList");
 
+// Hard fail early if popup.html isn't wired correctly
+if (
+    !display ||
+    !equalsBtn ||
+    !clearBtn ||
+    !copyBtn ||
+    !historyToggle ||
+    !historyDrawer ||
+    !historyList ||
+    !buttons?.length
+  ) {
+    console.error("Calculator popup: missing DOM elements. Check popup.html ids/classes.");
+  }
+
+
 // ===== Calculator State =====
 let currentInput = "";
 let history = [];
