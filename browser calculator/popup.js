@@ -100,46 +100,10 @@ function renderHistory() {
     });
 }
 
-// ===== Handle Button Clicks =====
-buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        const value = btn.dataset.value;
-
-        if (value) {
-            // Prevent multiple decimals in one number
-            if (value === "." && currentInput.endsWith(".")) return;
-
-            currentInput += value;
-            updateDisplay();
-        }
-    });
-});
-
 // ===== Clear Button =====
 clearBtn.addEventListener("click", () => {
     currentInput = "";
     updateDisplay();
-});
-
-// ===== Equals Button =====
-equalsBtn.addEventListener("click", () => {
-    if (!currentInput) return;
-
-    try {
-        const expression = currentInput;
-        const result = eval(expression); // safe here because input is controlled
-
-        addToHistory(expression, result);
-        currentInput = String(result);
-        updateDisplay();
-    } catch {
-        currentInput = "Error";
-        updateDisplay();
-        setTimeout(() => {
-            currentInput = "";
-            updateDisplay();
-        }, 800);
-    }
 });
 
 // ===== Copy to Clipboard =====
@@ -231,6 +195,7 @@ buttons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const value = btn.dataset.value;
     if (!value) return;
+
     appendValue(value);
   });
 });
@@ -268,34 +233,22 @@ document.addEventListener("keydown", (e) => {
         return;
     }
 
-    // Numbers
-    if (!isNaN(key)) {
-        currentInput += key;
-        updateDisplay();
-    }
-
-    // Operators
-    if (["+", "-", "*", "/"].includes(key)) {
-        currentInput += key;
-        updateDisplay();
-    }
-
-    // Decimal
-    if (key === ".") {
-        if (!currentInput.endsWith(".")) {
-            currentInput += ".";
-            updateDisplay();
-        }
-    }
-
     // Enter = equals
     if (key === "Enter") {
         equalsBtn.click();
+        return;
     }
 
     // Backspace
     if (key === "Backspace") {
         currentInput = currentInput.slice(0, -1);
         updateDisplay();
+        return;
+    }
+
+    // Numbers/operators/decimal all go through the same validator
+    if (/^[0-9]$/.test(key) || ["+", "-", "*", "/","."].includes(key)) {
+        appendValue(key);
+        return;
     }
 });
