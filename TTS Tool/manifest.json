@@ -1,0 +1,12 @@
+{
+    "manifest_version": 3,
+    "name": "Simple TTS UI",
+    "version": "1.0",
+    "description": "Speak selected text with a simple UI.",
+    "permissions": ["activeTab", "scripting"],
+    "action": {
+      "default_popup": "popup.html",
+      "default_title": "Simple TTS"
+    }
+  }
+  

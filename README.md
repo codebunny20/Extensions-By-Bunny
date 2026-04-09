@@ -1,30 +1,15 @@
-# Sticky Notes Anywhere (MV3)
+# Extensions-By-Bunny
 
-A minimal Manifest V3 browser extension that lets you place **draggable sticky notes** on any webpage and keeps them persisted via `chrome.storage.local`.
+A small collection of useful browser extensions I built while learning Web Extension development. Each tool focuses on a single feature and is designed to be lightweight and easy to use.
 
-## Features
+## Included Extensions
 
-- Add a note from the popup
-- Drag notes around (via the note header)
-- Edit note text in-place
-- Delete individual notes
-- Clear all notes
-- Notes persist across reloads for the same browser profile
+### Magnifier Toggle
+A lightweight extension that adds an on-page magnifying lens you can toggle on/off from the toolbar. When enabled, a circular magnifier follows your cursor and zooms the area underneath it for easier reading and close inspection. Press `Esc` to quickly disable the magnifier.
 
-## Files
+### Mouse Pointer Color
+An extension that lets you change the mouse cursor color on websites by applying a custom (colored) SVG cursor. Use the popup to enable/disable the cursor, pick a color, and apply it to the current tab. Settings are saved with Chrome Sync storage so they persist across pages and sessions.
 
-- `sticky-note-tool/pop.html` + `sticky-note-tool/popup.js`: extension popup UI
-- `sticky-note-tool/content.js`: creates/loads/saves notes on pages
-- `sticky-note-tool/notes.css`: note styling
-- `sticky-note-tool/manifest.json`: MV3 manifest
+### Reading Ruler
+A simple reading aid that overlays a horizontal “reading window” on any webpage to help you keep your place. It dims the page and highlights a single band that follows your cursor. Toggle it on/off with `Ctrl + Shift + R` to switch between normal browsing and guided reading mode.
 
-## Usage
-
-1. Load the `sticky-note-tool` folder as an unpacked extension.
-2. Open any normal webpage.
-3. Click the extension icon to open the popup.
-4. Use **Add Note** / **Clear All Notes**.
-
-## Notes
-
-- Notes are injected by a content script (`matches: <all_urls>`). Restricted pages (e.g. `chrome://`) won’t allow injection by browser rules.

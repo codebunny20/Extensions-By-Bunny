@@ -1,3 +1,9 @@
+// this is where i will test the line reader functionality, which is a feature that allows users to read one line of text at a time by dimming the rest of the page and highlighting a single line as they move their mouse.
+// This can help improve focus and reduce distractions while reading long articles or documents.
+//  The code will create an overlay that darkens the page and a ruler that follows the mouse cursor, creating a "window" effect that highlights only the line of text under the cursor.
+//  The feature can be toggled on and off with a keyboard shortcut (Ctrl+Shift+R).
+
+
 // Create the overlay that darkens the page
 const readingOverlay = document.createElement('div');
 readingOverlay.style.position = 'fixed';
@@ -23,9 +29,6 @@ readingRuler.style.pointerEvents = 'none';
 readingRuler.style.zIndex = '9999';
 readingRuler.style.display = 'none';
 document.body.appendChild(readingRuler);
-
-
-
 
 let rulerEnabled = false;
 
