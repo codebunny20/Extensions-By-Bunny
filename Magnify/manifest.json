@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Magnifier Toggle",
+  "name": "Magnifing Glass",
   "version": "1.0",
   "action": {},
   "background": {
@@ -15,5 +15,8 @@
       "css": ["magnify.css"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "icons": {
+    "16": "icons/16.png" 
+  }
 }

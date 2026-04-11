@@ -4,9 +4,16 @@
     "version": "1.0",
     "description": "Speak selected text with a simple UI.",
     "permissions": ["activeTab", "scripting"],
+  
+    "icons": {
+      "16": "icons/16.png" 
+    },
+  
     "action": {
       "default_popup": "popup.html",
-      "default_title": "Simple TTS"
+      "default_title": "Simple TTS",
+      "default_icon": {
+        "16": "icons/16.png"
+            }
     }
-  }
-  
+}
