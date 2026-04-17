@@ -1,37 +1,36 @@
 body {
-    font-family: sans-serif;
-    padding: 14px;
-    width: 220px;
-  }
-  
-  h2 {
-    margin-top: 0;
-    font-size: 18px;
-  }
-  
-  button {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    border: none;
-    border-radius: 6px;
-    background: #4a6cff;
-    color: white;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background: #3a56d6;
-  }
-  
-  label {
-    display: block;
-    margin-top: 10px;
-    font-size: 14px;
-  }
-  
-  select, input[type=range] {
-    width: 100%;
-    margin-top: 4px;
-  }
-  
+  font-family: sans-serif;
+  padding: 14px;
+  width: 220px;
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+button {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #4a6cff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #3a56d6;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+select, input[type=range] {
+  width: 100%;
+  margin-top: 4px;
+}
