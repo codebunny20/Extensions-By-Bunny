@@ -104,7 +104,9 @@ function setEnabled(on) {
   if (rulerEnabled) {
     readingRuler.style.top = `${lastYCenter - rulerHeight / 2}px`;
     updateOverlayClip(lastYCenter);
-    showHint('Height: Ctrl+Shift+Up / Ctrl+Shift+Down');
+    showHint(
+      'Height: Ctrl+Shift+Up/Down   •   Dim: Ctrl+Shift+Left/Right'
+    );    
   }
 }
 
