@@ -5,6 +5,7 @@ let lastYCenter = Math.round(window.innerHeight / 2);
 
 // Create the overlay that darkens the page
 const readingOverlay = document.createElement('div');
+readingOverlay.style.transition = 'background-color 0.15s ease';
 readingOverlay.style.position = 'fixed';
 readingOverlay.style.top = '0';
 readingOverlay.style.left = '0';

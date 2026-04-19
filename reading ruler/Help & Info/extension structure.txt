@@ -1,0 +1,7 @@
+reading ruler/
+├─ manifest.json
+├─ content.js
+├─ icons/
+│  └─ 16.png
+└─ Help & Info/
+   └─ extension structure.txt
