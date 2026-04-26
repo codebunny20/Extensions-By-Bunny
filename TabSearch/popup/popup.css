@@ -1,0 +1,23 @@
+body {
+    width: 220px;
+    padding: 10px;
+    font-family: sans-serif;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 8px;
+  }
+  
+  button {
+    width: 100%;
+    padding: 6px;
+    margin-top: 6px;
+  }
+  
+  #result {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  

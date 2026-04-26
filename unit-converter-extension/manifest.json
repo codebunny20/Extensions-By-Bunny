@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Unit Converter",
+  "description": "Quick, keyboard-friendly unit converter.",
+  "version": "0.1.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Unit Converter"
+  },
+  "permissions": []
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bunny Converter</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="bunny-box">
+    <h1 class="title">Bunny Converter</h1>
+
+    <label for="value-input">Value</label>
+    <input id="value-input" type="number" inputmode="decimal" />
+
+    <label for="category-select">Category</label>
+    <select id="category-select"></select>
+
+    <label for="from-select">From</label>
+    <select id="from-select"></select>
+
+    <label for="to-select">To</label>
+    <select id="to-select"></select>
+
+    <button id="convert-btn">Convert</button>
+
+    <output id="result" aria-live="polite"></output>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
