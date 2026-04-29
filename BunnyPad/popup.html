@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bunnypad</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="tf-header">
+    <h1 id="title">Bunnypad</h1>
+    <button id="clearBtn" type="button" aria-label="Clear note">
+      Clear
+    </button>
+  </header>
+
+  <main>
+    <label for="note" class="visually-hidden">Your note</label>
+    <textarea
+      id="note"
+      aria-labelledby="title"
+      spellcheck="true"
+      autofocus
+    ></textarea>
+  </main>
+
+  <footer class="tf-footer">
+    <span id="status" aria-live="polite"></span>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
