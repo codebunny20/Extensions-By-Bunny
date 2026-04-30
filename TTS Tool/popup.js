@@ -16,29 +16,45 @@ function loadVoices() {
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
+function speakText(text, voiceIndex, rate, pitch, volume) {
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.voice = voices[voiceIndex];
+  utter.rate = rate;
+  utter.pitch = pitch;
+  utter.volume = volume;
+  speechSynthesis.speak(utter);
+}
+
 document.getElementById("speakBtn").onclick = async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    func: (voiceIndex, rate) => {
-      const text = window.getSelection().toString();
-      if (!text) return;
+    func: () => window.getSelection().toString()
+  }, (res) => {
+    const text = res[0].result;
+    if (!text) return;
 
-      const utter = new SpeechSynthesisUtterance(text);
-      const voices = speechSynthesis.getVoices();
-      utter.voice = voices[voiceIndex];
-      utter.rate = rate;
-
-      speechSynthesis.speak(utter);
-    },
-    args: [
+    speakText(
+      text,
       document.getElementById("voiceSelect").value,
-      parseFloat(document.getElementById("rate").value)
-    ]
+      parseFloat(document.getElementById("rate").value),
+      parseFloat(document.getElementById("pitch").value),
+      parseFloat(document.getElementById("volume").value)
+    );
   });
 };
 
 document.getElementById("stopBtn").onclick = () => {
   speechSynthesis.cancel();
+};
+
+document.getElementById("previewBtn").onclick = () => {
+  speakText(
+    "This is a preview.",
+    document.getElementById("voiceSelect").value,
+    parseFloat(document.getElementById("rate").value),
+    parseFloat(document.getElementById("pitch").value),
+    parseFloat(document.getElementById("volume").value)
+  );
 };

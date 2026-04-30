@@ -1,19 +1,22 @@
 {
-    "manifest_version": 3,
-    "name": "Simple TTS UI",
-    "version": "1.0",
-    "description": "Speak selected text with a simple UI.",
-    "permissions": ["activeTab", "scripting"],
-  
-    "icons": {
-      "16": "icons/16.png" 
-    },
-  
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "Simple TTS",
-      "default_icon": {
-        "16": "icons/16.png"
-            }
+  "manifest_version": 3,
+  "name": "Bunny TTS",
+  "version": "2.0",
+  "description": "Clean, modern text‑to‑speech for selected text.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bunny TTS"
+  },
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "commands": {
+    "speak-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S"
+      },
+      "description": "Speak selected text"
     }
+  }
 }
