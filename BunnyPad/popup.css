@@ -86,7 +86,107 @@
     background: rgba(253, 251, 255, 0.95);
     color: var(--tf-deep);
     box-shadow: var(--shadow-soft);
+  }:root {
+    --pink: #f7c7e8;
+    --blue: #b8e3ff;
+    --white: #ffffff;
+    --lilac: #d8c9ff;
+    --text: #2b2236;
+    --radius: 10px;
+    --shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
   }
+  
+  body {
+    margin: 0;
+    padding: 10px;
+    width: 340px;
+    background: linear-gradient(135deg, var(--pink), var(--blue));
+    font-family: system-ui, sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .title {
+    margin: 0;
+    font-size: 1rem;
+    background: linear-gradient(90deg, var(--pink), var(--lilac), var(--blue));
+    
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  button {
+    border: 1px solid var(--lilac);
+    background: var(--white);
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  
+  #noteList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .noteItem {
+    background: var(--white);
+    padding: 8px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  
+  #editor.hidden {
+    display: none;
+  }
+  
+  #editor {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  #noteTitle {
+    padding: 6px;
+    border-radius: var(--radius);
+    border: 1px solid var(--lilac);
+  }
+  
+  #noteContent {
+    height: 150px;
+    padding: 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--lilac);
+    resize: none;
+  }
+  
+  .row {
+    display: flex;
+    gap: 6px;
+  }
+  
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+  }
+  
   
   textarea:focus-visible {
     outline: 2px solid var(--tf-blue);

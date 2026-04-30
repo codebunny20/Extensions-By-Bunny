@@ -2,28 +2,36 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Bunnypad</title>
+  <title>Bunny Pad</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <header class="tf-header">
-    <h1 id="title">Bunnypad</h1>
-    <button id="clearBtn" type="button" aria-label="Clear note">
-      Clear
-    </button>
+  <header class="header">
+    <h1 class="title">Bunny Pad</h1>
+    <button id="newNoteBtn" type="button">New</button>
   </header>
 
   <main>
-    <label for="note" class="visually-hidden">Your note</label>
-    <textarea
-      id="note"
-      aria-labelledby="title"
-      spellcheck="true"
-      autofocus
-    ></textarea>
+    <div id="noteList"></div>
+
+    <div id="editor" class="hidden">
+      <input id="noteTitle" placeholder="Title" />
+      <textarea id="noteContent"></textarea>
+
+      <div class="row">
+        <button id="saveBtn" type="button">Save</button>
+        <button id="deleteBtn" type="button">Delete</button>
+      </div>
+
+      <div class="row">
+        <button id="exportOneBtn" type="button">Export Note</button>
+        <button id="backBtn" type="button">Back</button>
+      </div>
+    </div>
   </main>
 
-  <footer class="tf-footer">
+  <footer>
+    <button id="exportAllBtn" type="button">Export All</button>
     <span id="status" aria-live="polite"></span>
   </footer>
 

@@ -1,58 +1,161 @@
-const noteEl = document.getElementById("note");
+const STORAGE_KEY = "saved_notes";
+
+const noteList = document.getElementById("noteList");
+const editor = document.getElementById("editor");
+const noteTitle = document.getElementById("noteTitle");
+const noteContent = document.getElementById("noteContent");
 const statusEl = document.getElementById("status");
-const clearBtn = document.getElementById("clearBtn");
 
-const STORAGE_KEY = "transfem_notepad_note";
-let saveTimeout = null;
+const newNoteBtn = document.getElementById("newNoteBtn");
+const saveBtn = document.getElementById("saveBtn");
+const deleteBtn = document.getElementById("deleteBtn");
+const backBtn = document.getElementById("backBtn");
+const exportOneBtn = document.getElementById("exportOneBtn");
+const exportAllBtn = document.getElementById("exportAllBtn");
 
-function showStatus(message) {
-  statusEl.textContent = message;
-  if (message) {
-    setTimeout(() => {
-      if (statusEl.textContent === message) {
-        statusEl.textContent = "";
-      }
-    }, 1500);
-  }
+let currentNoteId = null;
+
+function showStatus(msg) {
+  statusEl.textContent = msg;
+  setTimeout(() => {
+    if (statusEl.textContent === msg) statusEl.textContent = "";
+  }, 1500);
 }
 
-function loadNote() {
-  chrome.storage.sync.get(STORAGE_KEY, (data) => {
-    if (chrome.runtime.lastError) {
-      showStatus("Could not load note.");
-      return;
-    }
-    noteEl.value = data[STORAGE_KEY] || "";
+function loadAllNotes(callback) {
+  chrome.storage.local.get(STORAGE_KEY, data => {
+    const notes = data[STORAGE_KEY] || [];
+    callback(notes);
   });
 }
 
-function saveNote() {
-  const value = noteEl.value;
-  chrome.storage.sync.set({ [STORAGE_KEY]: value }, () => {
-    if (chrome.runtime.lastError) {
-      showStatus("Save failed.");
-      return;
-    }
-    showStatus("Saved.");
+function saveAllNotes(notes, cb) {
+  chrome.storage.local.set({ [STORAGE_KEY]: notes }, () => {
+    if (cb) cb();
   });
 }
 
-noteEl.addEventListener("input", () => {
-  if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(saveNote, 400);
+function renderList() {
+  editor.classList.add("hidden");
+  noteList.innerHTML = "";
+
+  loadAllNotes(notes => {
+    if (!notes.length) {
+      const empty = document.createElement("div");
+      empty.textContent = "No notes yet.";
+      empty.style.fontSize = "0.85rem";
+      noteList.appendChild(empty);
+      return;
+    }
+
+    notes.forEach(n => {
+      const div = document.createElement("div");
+      div.className = "noteItem";
+      div.textContent = n.title || "(Untitled)";
+      div.onclick = () => openEditor(n.id);
+      noteList.appendChild(div);
+    });
+  });
+}
+
+function openEditor(id) {
+  loadAllNotes(notes => {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+
+    currentNoteId = id;
+    noteTitle.value = note.title;
+    noteContent.value = note.content;
+    editor.classList.remove("hidden");
+  });
+}
+
+newNoteBtn.addEventListener("click", () => {
+  currentNoteId = crypto.randomUUID();
+  noteTitle.value = "";
+  noteContent.value = "";
+  editor.classList.remove("hidden");
 });
 
-clearBtn.addEventListener("click", () => {
-  if (!noteEl.value) {
-    showStatus("Already empty.");
-    return;
-  }
-  const confirmed = confirm("Clear your note?");
-  if (!confirmed) return;
+saveBtn.addEventListener("click", () => {
+  loadAllNotes(notes => {
+    let note = notes.find(n => n.id === currentNoteId);
 
-  noteEl.value = "";
-  saveNote();
-  showStatus("Cleared.");
+    if (!note) {
+      note = { id: currentNoteId };
+      notes.push(note);
+    }
+
+    note.title = noteTitle.value.trim() || "Untitled";
+    note.content = noteContent.value;
+    note.updated = Date.now();
+
+    saveAllNotes(notes, () => {
+      showStatus("Saved");
+      renderList();
+    });
+  });
 });
 
-document.addEventListener("DOMContentLoaded", loadNote);
+deleteBtn.addEventListener("click", () => {
+  if (!currentNoteId) return;
+
+  loadAllNotes(notes => {
+    const filtered = notes.filter(n => n.id !== currentNoteId);
+    saveAllNotes(filtered, () => {
+      showStatus("Deleted");
+      renderList();
+    });
+  });
+});
+
+backBtn.addEventListener("click", () => {
+  renderList();
+});
+
+exportOneBtn.addEventListener("click", () => {
+  if (!currentNoteId) return;
+
+  loadAllNotes(notes => {
+    const note = notes.find(n => n.id === currentNoteId);
+    if (!note) return;
+
+    const blob = new Blob([note.content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${note.title || "note"}.txt`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+    showStatus("Exported note");
+  });
+});
+
+exportAllBtn.addEventListener("click", () => {
+  loadAllNotes(notes => {
+    if (!notes.length) {
+      showStatus("No notes to export");
+      return;
+    }
+
+    const text = notes
+      .map(n => `# ${n.title || "Untitled"}\n\n${n.content || ""}\n\n---\n`)
+      .join("");
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    // default “file” name: saved_notes.txt
+    a.download = "saved_notes.txt";
+    a.click();
+
+    URL.revokeObjectURL(url);
+    showStatus("Exported all");
+  });
+});
+
+renderList();

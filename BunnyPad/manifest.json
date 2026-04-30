@@ -1,15 +1,11 @@
 {
-    "manifest_version": 3,
-    "name": "BunnyPad",
-    "description": "A cozy transfem-themed notepad that lives in your browser.",
-    "version": "1.0.0",
-    "action": {
-      "default_popup": "popup.html",
-      "default_title": "BunnyPad"
-    },
-
-    "permissions": [
-      "storage"
-    ]
-  }
-  
+  "manifest_version": 3,
+  "name": "Bunny Pad",
+  "version": "1.0",
+  "description": "A cozy bunny-themed notepad with a saved_notes default file and export options.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bunny Pad"
+  },
+  "permissions": ["storage"]
+}
