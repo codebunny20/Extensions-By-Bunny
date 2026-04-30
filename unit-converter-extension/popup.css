@@ -1,107 +1,75 @@
 :root {
-    --bunny-bg: #ffffff;
-    --bunny-border: #dcdcdc;
-    --bunny-radius: 10px;
-  
-    --bunny-gradient: linear-gradient(
-      135deg,
-      #55cdfc,
-      #f7a8b8,
-      #ffffff,
-      #f7a8b8,
-      #55cdfc
-    );
-  
-    --text: #222;
-    --accent: #f7a8b8;
-    --accent-strong: #e58aa2;
-  }
-  
-  body {
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    padding: 0.75rem;
-    min-width: 240px;
-    background: var(--bunny-bg);
-    position: relative;
-  }
-  
-  .bunny-box {
-    display: grid;
-    gap: 0.6rem;
-  }
-  
-  .title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    text-align: center;
-    padding: 0.4rem 0;
-    background: var(--bunny-gradient);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    user-select: none;
-    margin-bottom: 0.4rem;
-  }
-  
-  label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text);
-  }
-  
-  input,
-  select {
-    font-size: 0.9rem;
-    padding: 0.35rem 0.45rem;
-    border-radius: var(--bunny-radius);
-    border: 1px solid var(--bunny-border);
-    background: #fff;
-    transition: border 0.15s ease, box-shadow 0.15s ease;
-  }
-  
-  input:focus,
-  select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px #f7a8b833;
-    outline: none;
-  }
-  
-  button {
-    padding: 0.45rem 0.6rem;
-    font-size: 0.9rem;
-    border: none;
-    border-radius: var(--bunny-radius);
-    background: var(--accent);
-    color: #fff;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.15s ease, transform 0.1s ease;
-  }
-  
-  button:hover {
-    background: var(--accent-strong);
-  }
-  
-  button:active {
-    transform: scale(0.97);
-  }
-  
-  output {
-    margin-top: 0.4rem;
-    font-weight: 700;
-    text-align: center;
-    color: var(--text);
-  }
-  
-  /* Tiny bunny accent */
-  body::after {
-    content: "🐰";
-    position: absolute;
-    bottom: 6px;
-    right: 8px;
-    opacity: 0.25;
-    font-size: 1.1rem;
-    pointer-events: none;
-  }
-  
+  --accent: #f7a8b8;
+  --accent-blue: #55cdfc;
+  --accent-strong: #e58aa2;
+  --border: #e1e1e1;
+  --text: #222;
+  --radius: 12px;
+}
+
+body {
+  margin: 0;
+  padding: 0.75rem;
+  font-family: system-ui, sans-serif;
+  background: #ffffff;
+  min-width: 260px;
+  color: var(--text);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.logo {
+  font-size: 1.6rem;
+}
+
+h1 {
+  font-size: 1.1rem;
+  margin: 0;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent), #ffffff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.3rem;
+  display: block;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.45rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent));
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.3rem;
+}
+
+.result {
+  display: block;
+  margin-top: 0.6rem;
+  font-weight: 700;
+  text-align: center;
+  min-height: 1.2em;
+  color: var(--accent-strong);
+}

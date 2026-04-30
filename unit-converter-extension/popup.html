@@ -6,25 +6,28 @@
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <main class="bunny-box">
-    <h1 class="title">Bunny Converter</h1>
+  <header class="header">
+    <span class="logo">🐰</span>
+    <h1>Bunny Converter</h1>
+  </header>
 
-    <label for="value-input">Value</label>
-    <input id="value-input" type="number" inputmode="decimal" />
+  <section class="panel active">
+    <label for="conv-category">Category</label>
+    <select id="conv-category"></select>
 
-    <label for="category-select">Category</label>
-    <select id="category-select"></select>
+    <label for="conv-value">Value</label>
+    <input id="conv-value" type="number" inputmode="decimal" />
 
-    <label for="from-select">From</label>
-    <select id="from-select"></select>
+    <label for="conv-from">From</label>
+    <select id="conv-from"></select>
 
-    <label for="to-select">To</label>
-    <select id="to-select"></select>
+    <label for="conv-to">To</label>
+    <select id="conv-to"></select>
 
-    <button id="convert-btn">Convert</button>
+    <button id="conv-btn" class="primary-btn">Convert</button>
 
-    <output id="result" aria-live="polite"></output>
-  </main>
+    <output id="conv-result" class="result" aria-live="polite"></output>
+  </section>
 
   <script src="popup.js"></script>
 </body>
