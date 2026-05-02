@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+  <title>Ohm's Law Tool</title>
+</head>
+<body>
+  <h1>Ohm’s Law</h1>
+
+  <div class="field">
+    <label for="voltage">Voltage (V)</label>
+    <input id="voltage" type="number" step="any" placeholder="e.g., 12" title="Voltage in volts (V)">
+  </div>
+
+  <div class="field">
+    <label for="current">Current (I)</label>
+    <input id="current" type="number" step="any" placeholder="e.g., 1.5" title="Current in amperes (A)">
+  </div>
+
+  <div class="field">
+    <label for="resistance">Resistance (R)</label>
+    <input id="resistance" type="number" step="any" placeholder="e.g., 8" title="Resistance in ohms (Ω)">
+  </div>
+
+  <div class="field">
+    <label for="power">Power (P)</label>
+    <input id="power" type="number" step="any" placeholder="e.g., 18" title="Power in watts (W)">
+  </div>
+
+  <button id="calcBtn">Calculate</button>
+  <button id="clearBtn" class="clear">Clear</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
