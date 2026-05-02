@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "Bunny Calculator",
+    "version": "1.0",
+    "description": "A clean, minimalist calculator extension.",
+    "action": {
+      "default_popup": "popup.html"
+    }
+  }
+  

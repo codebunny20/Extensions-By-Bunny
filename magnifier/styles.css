@@ -1,0 +1,19 @@
+#mg-magnifier-overlay {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #22c55e, 0 10px 30px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    z-index: 2147483647;
+    transform: translate(-50%, -50%);
+    background: transparent;
+  }
+  
+  #mg-magnifier-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    will-change: transform;
+  }
+  
