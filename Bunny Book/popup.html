@@ -1,3 +1,4 @@
+<!-- ...existing code... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,24 +9,44 @@
 </head>
 <body>
 
-<header>
-  <h1>Bunny Book</h1>
-  <button id="newNote" title="New note">＋</button>
+<header class="topbar">
+  <div class="brand">
+    <h1>Bunny Book</h1>
+    <span id="saveStatus" class="status" aria-live="polite"></span>
+  </div>
+
+  <div class="topbarActions">
+    <button id="newNote" class="btn btnPrimary" title="New note" type="button">New</button>
+  </div>
 </header>
 
-<div id="listView">
-  <ul id="noteList"></ul>
+<div id="listView" class="view">
+  <div class="listTools">
+    <label class="srOnly" for="searchInput">Search notes</label>
+    <input id="searchInput" class="search" placeholder="Search notes…" autocomplete="off">
+  </div>
+
+  <div id="emptyState" class="empty hidden">
+    <div class="emptyTitle">No notes yet</div>
+    <div class="emptyText">Create your first note to get started.</div>
+    <button id="newNoteEmpty" class="btn btnPrimary" type="button">Create a note</button>
+  </div>
+
+  <ul id="noteList" class="noteList" role="list"></ul>
 </div>
 
-<div id="editorView" class="hidden">
-  <input id="titleInput" placeholder="Title">
-  <textarea id="bodyInput" placeholder="Write here..."></textarea>
+<div id="editorView" class="view hidden">
+  <div class="editorHeader">
+    <input id="titleInput" class="title" placeholder="Title" maxlength="80">
+    <button id="backToList" class="btn btnGhost" type="button" title="Back to list">Back</button>
+  </div>
+
+  <textarea id="bodyInput" class="body" placeholder="Write here..."></textarea>
 
   <div class="editorButtons">
-    <button id="saveNote">Save</button>
-    <button id="deleteNote">Delete</button>
-    <button id="exportNote">Export</button>
-    <button id="backToList">Back</button>
+    <button id="saveNote" class="btn btnPrimary" type="button">Save</button>
+    <button id="exportNote" class="btn" type="button">Export</button>
+    <button id="deleteNote" class="btn btnDanger" type="button">Delete</button>
   </div>
 </div>
 
