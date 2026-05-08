@@ -1,4 +1,3 @@
-// ...existing code...
 let currentId = null;
 let autosaveTimer = 0;
 let lastLoadedSnapshot = { title: "", body: "" };

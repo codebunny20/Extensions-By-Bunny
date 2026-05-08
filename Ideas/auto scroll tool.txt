@@ -1,0 +1,46 @@
+Auto Scroll Tool (Browser Extension Idea)
+
+Goal
+Create a simple browser extension that automatically scrolls web pages so users don’t have to scroll manually.
+
+Why it’s useful
+Auto-scrolling can make it easier to:
+- Read long articles or documentation hands-free
+- Browse social media feeds more comfortably
+- Multitask while a page scrolls on its own
+- Support users with mobility or repetitive-strain limitations
+
+Core features (MVP)
+1. Start/Stop auto-scroll
+    - Toggle scrolling on and off instantly.
+2. Adjustable scroll speed
+    - Let the user choose how fast the page moves (e.g., pixels per second).
+3. Smooth scrolling option
+    - A setting to switch between smooth and step-based scrolling.
+4. Simple activation
+    - Toolbar button and/or a keyboard shortcut.
+
+Settings to add early
+- Scroll speed (slider + numeric input)
+- FPS / update rate (advanced option; default to a safe value)
+- Pause on user input (optional): stop scrolling if the user manually scrolls or presses a key
+
+Later enhancements
+- Scroll direction (down/up)
+- Page-aware behavior (pause at end of page, resume when more loads)
+- Site-specific settings (different speeds per website)
+- “Reader mode” support or automatic focus on main content
+- Profiles (save multiple presets like “Reading” vs “Feed browsing”)
+
+Development approach
+I’ll build this in small steps:
+1. Implement basic auto-scroll (start/stop + default speed).
+2. Add a settings UI to control speed and smoothness.
+3. Add keyboard shortcuts and better pause/resume behavior.
+4. Test on common sites (articles, infinite scrolling feeds) and adjust for reliability.
+
+Testing notes
+- Verify scrolling is smooth and doesn’t jitter.
+- Ensure it stops immediately when toggled off.
+- Confirm it behaves well on infinite-scroll pages.
+- Check performance impact at different FPS / speeds.
