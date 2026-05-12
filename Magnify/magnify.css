@@ -5,35 +5,52 @@
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  border: 3px solid #fff;
+  border: 2px solid rgba(255, 255, 255, 0.96);
   overflow: hidden;
-
-  /* Don't block interaction with the real page */
   pointer-events: none;
-
-  /* Center lens on the computed left/top */
   transform: translate(-50%, -50%);
-
   z-index: 2147483647;
-  background: rgba(0, 0, 0, 0.06);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.22), rgba(12, 18, 28, 0.18));
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.34), 0 0 0 8px rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   will-change: left, top;
 }
 
-#magnifier__clone {
+#magnifier::after {
+  content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-
-  /* Make sure transforms apply to the whole cloned document */
-  width: max-content;
-  height: max-content;
-
-  transform-origin: top left;
-  will-change: transform;
+  inset: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  pointer-events: none;
 }
 
-/* Ensure the cloned subtree never captures interactions */
-#magnifier__clone,
-#magnifier__clone * {
-  pointer-events: none !important;
+#magnifier__view {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  background-repeat: no-repeat;
+  background-position: center;
+  will-change: background-position, background-size;
+}
+
+#magnifier__view::before,
+#magnifier__view::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+}
+
+#magnifier__view::before {
+  width: 2px;
+  height: 36px;
+}
+
+#magnifier__view::after {
+  width: 36px;
+  height: 2px;
 }

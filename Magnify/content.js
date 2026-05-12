@@ -1,159 +1,265 @@
-let magnifierEnabled = false;
-let magnifier = null;
-let viewportClone = null; // will be a <div> that contains a cloned subtree
-let lastMouse = null;
-
-const ZOOM = 2;
-const LENS_SIZE = 180;
-
-const ext = chrome;
-
-// rAF positioning (keep it simple + smooth)
-let rafId = 0;
-let targetClientX = 0,
-  targetClientY = 0;
-let curClientX = 0,
-  curClientY = 0;
-const FOLLOW = 0.25;
-
-function setMagnifierEnabled(next) {
-  magnifierEnabled = Boolean(next);
-  magnifierEnabled ? enableMagnifier() : disableMagnifier();
-}
-
-// Guard in case this script ever runs outside extension context
-if (ext?.runtime?.onMessage) {
-  ext.runtime.onMessage.addListener((msg) => {
-    if (msg.action === "toggleMagnifier") setMagnifierEnabled(!magnifierEnabled);
-  });
-}
-
-function enableMagnifier() {
-  if (magnifier) return;
-
-  magnifier = document.createElement("div");
-  magnifier.id = "magnifier";
-  magnifier.setAttribute("aria-hidden", "true");
-  magnifier.tabIndex = -1;
-
-  viewportClone = document.createElement("div");
-  viewportClone.id = "magnifier__clone";
-  viewportClone.setAttribute("aria-hidden", "true");
-
-  magnifier.style.width = `${LENS_SIZE}px`;
-  magnifier.style.height = `${LENS_SIZE}px`;
-
-  magnifier.appendChild(viewportClone);
-  (document.body || document.documentElement).appendChild(magnifier);
-
-  // Build initial clone
-  syncClone();
-
-  // Initial position
-  const initX = lastMouse?.clientX ?? window.innerWidth / 2;
-  const initY = lastMouse?.clientY ?? window.innerHeight / 2;
-  targetClientX = curClientX = initX;
-  targetClientY = curClientY = initY;
-
-  document.addEventListener("mousemove", onMouseMove, { passive: true });
-  document.addEventListener("keydown", onKeyDown, { passive: true });
-  window.addEventListener("scroll", onScrollOrResize, { passive: true });
-  window.addEventListener("resize", onScrollOrResize, { passive: true });
-
-  startRenderLoop();
-}
-
-function disableMagnifier() {
-  document.removeEventListener("mousemove", onMouseMove);
-  document.removeEventListener("keydown", onKeyDown);
-  window.removeEventListener("scroll", onScrollOrResize);
-  window.removeEventListener("resize", onScrollOrResize);
-
-  stopRenderLoop();
-
-  if (magnifier) magnifier.remove();
-  magnifier = null;
-  viewportClone = null;
-}
-
-function onKeyDown(e) {
-  if (e.key === "Escape" && magnifierEnabled) setMagnifierEnabled(false);
-}
-
-function onMouseMove(e) {
-  lastMouse = e;
-  targetClientX = e.clientX;
-  targetClientY = e.clientY;
-}
-
-function onScrollOrResize() {
-  // Re-clone occasionally to reflect layout changes; cheap and reliable.
-  syncClone();
-}
-
-function startRenderLoop() {
-  stopRenderLoop();
-  rafId = requestAnimationFrame(renderTick);
-}
-
-function stopRenderLoop() {
-  if (rafId) cancelAnimationFrame(rafId);
-  rafId = 0;
-}
-
-function renderTick() {
-  if (!magnifierEnabled || !magnifier || !viewportClone) {
-    rafId = 0;
+(function initMagnifier() {
+  if (globalThis.__magnifierContentLoaded) {
     return;
   }
 
-  curClientX = lerp(curClientX, targetClientX, FOLLOW);
-  curClientY = lerp(curClientY, targetClientY, FOLLOW);
+  globalThis.__magnifierContentLoaded = true;
 
-  const half = LENS_SIZE / 2;
-  const x = clamp(curClientX, half, window.innerWidth - half);
-  const y = clamp(curClientY, half, window.innerHeight - half);
+  const DEFAULT_SETTINGS = {
+    zoom: 2,
+    lensSize: 180
+  };
 
-  magnifier.style.left = `${x}px`;
-  magnifier.style.top = `${y}px`;
+  let magnifierEnabled = false;
+  let magnifier = null;
+  let magnifierView = null;
+  let refreshTimer = 0;
+  let captureInFlight = false;
+  let captureRequestId = 0;
+  let lastCaptureUrl = "";
+  let lastMouse = null;
+  let settings = { ...DEFAULT_SETTINGS };
 
-  // Translate by PAGE coords (client + scroll) because clone is document-sized.
-  const pageX = curClientX + window.scrollX;
-  const pageY = curClientY + window.scrollY;
+  let rafId = 0;
+  let targetClientX = window.innerWidth / 2;
+  let targetClientY = window.innerHeight / 2;
+  let curClientX = targetClientX;
+  let curClientY = targetClientY;
 
-  const tx = -(pageX * ZOOM - half);
-  const ty = -(pageY * ZOOM - half);
+  const FOLLOW = 0.22;
+  const ext = chrome;
 
-  viewportClone.style.transformOrigin = "top left";
-  viewportClone.style.transform = `translate(${tx}px, ${ty}px) scale(${ZOOM})`;
+  if (ext?.runtime?.onMessage) {
+    ext.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (msg?.action === "magnifier:ping") {
+        sendResponse({ ok: true });
+        return false;
+      }
 
-  rafId = requestAnimationFrame(renderTick);
-}
+      if (msg?.action === "toggleMagnifier") {
+        applySettings(msg.settings);
+        setMagnifierEnabled(!magnifierEnabled);
+        sendResponse({ ok: true, enabled: magnifierEnabled });
+        return false;
+      }
 
-function syncClone() {
-  if (!viewportClone) return;
+      if (msg?.action === "updateMagnifierSettings") {
+        applySettings(msg.settings);
+        sendResponse({ ok: true, settings });
+        return false;
+      }
 
-  // Clear old clone
-  viewportClone.textContent = "";
+      return false;
+    });
+  }
 
-  // Clone the whole documentElement so layout/positioning matches page coordinates.
-  const root = document.documentElement.cloneNode(true);
+  function setMagnifierEnabled(next) {
+    const enabled = Boolean(next);
+    if (enabled === magnifierEnabled) return;
 
-  // Strip the magnifier itself if it got cloned (avoid recursion).
-  root.querySelector?.("#magnifier")?.remove();
+    magnifierEnabled = enabled;
+    if (enabled) {
+      enableMagnifier();
+    } else {
+      disableMagnifier();
+    }
+  }
 
-  viewportClone.appendChild(root);
-}
+  function applySettings(nextSettings = {}) {
+    settings = {
+      zoom: clampNumber(nextSettings.zoom, settings.zoom, 1.25, 4),
+      lensSize: clampNumber(nextSettings.lensSize, settings.lensSize, 120, 280)
+    };
 
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
+    if (magnifier) {
+      magnifier.style.width = `${settings.lensSize}px`;
+      magnifier.style.height = `${settings.lensSize}px`;
+    }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
+    updateLensView();
+  }
 
-// Allow programmatic toggling when injected via chrome.scripting.executeScript.
-globalThis.__magnifierToggle = () => {
-  setMagnifierEnabled(!magnifierEnabled);
-};
+  function enableMagnifier() {
+    if (!magnifier) {
+      magnifier = document.createElement("div");
+      magnifier.id = "magnifier";
+      magnifier.setAttribute("aria-hidden", "true");
+      magnifier.tabIndex = -1;
+
+      magnifierView = document.createElement("div");
+      magnifierView.id = "magnifier__view";
+      magnifierView.setAttribute("aria-hidden", "true");
+
+      magnifier.appendChild(magnifierView);
+      (document.body || document.documentElement).appendChild(magnifier);
+    }
+
+    const initX = lastMouse?.clientX ?? window.innerWidth / 2;
+    const initY = lastMouse?.clientY ?? window.innerHeight / 2;
+    targetClientX = curClientX = initX;
+    targetClientY = curClientY = initY;
+
+    applySettings(settings);
+
+    document.addEventListener("mousemove", onMouseMove, { passive: true });
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", onViewportChange, { passive: true });
+    window.addEventListener("resize", onViewportChange, { passive: true });
+
+    requestCapture();
+    startRenderLoop();
+  }
+
+  function disableMagnifier() {
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("scroll", onViewportChange);
+    window.removeEventListener("resize", onViewportChange);
+
+    if (refreshTimer) {
+      clearTimeout(refreshTimer);
+      refreshTimer = 0;
+    }
+
+    stopRenderLoop();
+    captureRequestId += 1;
+    captureInFlight = false;
+    lastCaptureUrl = "";
+
+    if (magnifierView) {
+      magnifierView.style.backgroundImage = "none";
+    }
+
+    if (magnifier) {
+      magnifier.remove();
+    }
+
+    magnifier = null;
+    magnifierView = null;
+  }
+
+  function onKeyDown(event) {
+    if (event.key === "Escape" && magnifierEnabled) {
+      setMagnifierEnabled(false);
+    }
+  }
+
+  function onMouseMove(event) {
+    lastMouse = event;
+    targetClientX = event.clientX;
+    targetClientY = event.clientY;
+  }
+
+  function onViewportChange() {
+    if (refreshTimer) {
+      clearTimeout(refreshTimer);
+    }
+
+    refreshTimer = window.setTimeout(() => {
+      refreshTimer = 0;
+      requestCapture();
+    }, 120);
+  }
+
+  function requestCapture() {
+    if (!magnifierEnabled || captureInFlight || !ext?.runtime?.sendMessage) {
+      return;
+    }
+
+    const requestId = ++captureRequestId;
+    captureInFlight = true;
+
+    setLensCaptureVisibility(false);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!magnifierEnabled || requestId !== captureRequestId) {
+          captureInFlight = false;
+          setLensCaptureVisibility(true);
+          return;
+        }
+
+        ext.runtime.sendMessage({ action: "magnifier:capture" }, (response) => {
+          captureInFlight = false;
+          setLensCaptureVisibility(true);
+
+          if (!magnifierEnabled || requestId !== captureRequestId) {
+            return;
+          }
+
+          if (ext.runtime.lastError || !response?.ok || !response.dataUrl) {
+            return;
+          }
+
+          lastCaptureUrl = response.dataUrl;
+          updateLensView();
+        });
+      });
+    });
+  }
+
+  function startRenderLoop() {
+    stopRenderLoop();
+    rafId = requestAnimationFrame(renderTick);
+  }
+
+  function stopRenderLoop() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+    }
+
+    rafId = 0;
+  }
+
+  function renderTick() {
+    if (!magnifierEnabled || !magnifier) {
+      rafId = 0;
+      return;
+    }
+
+    curClientX = lerp(curClientX, targetClientX, FOLLOW);
+    curClientY = lerp(curClientY, targetClientY, FOLLOW);
+
+    const half = settings.lensSize / 2;
+    const x = clamp(curClientX, half, window.innerWidth - half);
+    const y = clamp(curClientY, half, window.innerHeight - half);
+
+    magnifier.style.left = `${x}px`;
+    magnifier.style.top = `${y}px`;
+
+    updateLensView();
+    rafId = requestAnimationFrame(renderTick);
+  }
+
+  function updateLensView() {
+    if (!magnifierView) return;
+
+    const half = settings.lensSize / 2;
+
+    magnifierView.style.backgroundSize = `${window.innerWidth * settings.zoom}px ${window.innerHeight * settings.zoom}px`;
+    magnifierView.style.backgroundPosition = `${-curClientX * settings.zoom + half}px ${-curClientY * settings.zoom + half}px`;
+
+    if (lastCaptureUrl) {
+      magnifierView.style.backgroundImage = `url(${lastCaptureUrl})`;
+    }
+  }
+
+  function setLensCaptureVisibility(visible) {
+    if (!magnifier) return;
+    magnifier.style.visibility = visible ? "visible" : "hidden";
+  }
+
+  function lerp(start, end, amount) {
+    return start + (end - start) * amount;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function clampNumber(value, fallback, min, max) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return clamp(numeric, min, max);
+  }
+})();
