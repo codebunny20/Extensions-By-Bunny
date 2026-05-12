@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bunny Mathbox</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Bunny Mathbox</h1>
+      <p>Calculator and converter tools all in one place.</p>
+    </header>
+
+    <section class="tool-picker">
+      <label for="tool-select">Choose tool</label>
+      <select id="tool-select">
+        <option value="calculator">Standard Calculator</option>
+        <option value="converter">Unit Converter</option>
+        <option value="ohms">Quick Ohms Law Tool</option>
+        <option value="resistor">Resistor Calculator</option>
+      </select>
+    </section>
+
+    <section id="tool-calculator" class="tool-section is-active" data-tool="calculator">
+      <output id="calc-display" class="calc-display">0</output>
+      <div class="calc-grid" id="calc-grid">
+        <button type="button" data-key="7">7</button>
+        <button type="button" data-key="8">8</button>
+        <button type="button" data-key="9">9</button>
+        <button type="button" data-op="/">/</button>
+
+        <button type="button" data-key="4">4</button>
+        <button type="button" data-key="5">5</button>
+        <button type="button" data-key="6">6</button>
+        <button type="button" data-op="*">*</button>
+
+        <button type="button" data-key="1">1</button>
+        <button type="button" data-key="2">2</button>
+        <button type="button" data-key="3">3</button>
+        <button type="button" data-op="-">-</button>
+
+        <button type="button" data-key="0">0</button>
+        <button type="button" data-key=".">.</button>
+        <button type="button" id="calc-clear">C</button>
+        <button type="button" data-op="+">+</button>
+
+        <button type="button" id="calc-equals" class="wide">=</button>
+      </div>
+    </section>
+
+    <section id="tool-converter" class="tool-section" data-tool="converter">
+      <label for="conv-category">Category</label>
+      <select id="conv-category"></select>
+
+      <label for="conv-value">Value</label>
+      <input id="conv-value" type="number" inputmode="decimal" />
+
+      <label for="conv-from">From</label>
+      <select id="conv-from"></select>
+
+      <label for="conv-to">To</label>
+      <select id="conv-to"></select>
+
+      <button type="button" id="conv-run">Convert</button>
+      <output id="conv-result" class="result" aria-live="polite"></output>
+    </section>
+
+    <section id="tool-ohms" class="tool-section" data-tool="ohms">
+      <label for="ohm-voltage">Voltage (V)</label>
+      <input id="ohm-voltage" type="number" step="any" placeholder="e.g. 12" />
+
+      <label for="ohm-current">Current (I)</label>
+      <input id="ohm-current" type="number" step="any" placeholder="e.g. 1.5" />
+
+      <label for="ohm-resistance">Resistance (R)</label>
+      <input id="ohm-resistance" type="number" step="any" placeholder="e.g. 8" />
+
+      <label for="ohm-power">Power (P)</label>
+      <input id="ohm-power" type="number" step="any" placeholder="e.g. 18" />
+
+      <div class="row-actions">
+        <button type="button" id="ohm-calc">Calculate</button>
+        <button type="button" id="ohm-clear" class="secondary">Clear</button>
+      </div>
+      <output id="ohm-result" class="result" aria-live="polite"></output>
+    </section>
+
+    <section id="tool-resistor" class="tool-section" data-tool="resistor">
+      <label for="res-vin">Supply Voltage (V_in)</label>
+      <input id="res-vin" type="number" step="0.01" min="0" value="5" />
+
+      <label for="res-vout">Target Voltage (V_target)</label>
+      <input id="res-vout" type="number" step="0.01" min="0" value="3.7" />
+
+      <label for="res-current">Load Current (mA)</label>
+      <input id="res-current" type="number" step="0.1" min="0" value="200" />
+
+      <button type="button" id="res-calc">Calculate</button>
+
+      <div id="res-result" class="result-block hidden" aria-live="polite">
+        <p id="res-r-line"></p>
+        <p id="res-p-line"></p>
+        <p id="res-note-line" class="muted"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,9 +1,12 @@
 let currentId = null;
 let autosaveTimer = 0;
 let lastLoadedSnapshot = { title: "", body: "" };
+let recognition = null;
+let recognizing = false;
 
 const listView = document.getElementById("listView");
 const editorView = document.getElementById("editorView");
+const micBtn = document.getElementById("micBtn");
 
 const noteList = document.getElementById("noteList");
 const newNoteBtn = document.getElementById("newNote");
@@ -20,6 +23,204 @@ const emptyState = document.getElementById("emptyState");
 const newNoteEmpty = document.getElementById("newNoteEmpty");
 const saveStatus = document.getElementById("saveStatus");
 
+function isSpeechSupported() {
+  return "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+}
+
+function ensureRecognition() {
+  if (recognition) return recognition;
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+
+  const r = new SR();
+  r.continuous = true;      // keep listening
+  r.interimResults = true;  // show partials
+  r.lang = navigator.language || "en-US";
+
+  let finalBuffer = "";
+
+  r.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const res = event.results[i];
+      const text = res[0]?.transcript || "";
+      if (res.isFinal) finalBuffer += text;
+      else interim += text;
+    }
+
+    // Show interim in status; only commit finals into the textarea
+    setStatus(interim ? `Listening… ${interim}` : "Listening…");
+
+    if (finalBuffer.trim()) {
+      insertAtCursor(bodyInput, finalBuffer);
+      finalBuffer = "";
+      scheduleAutosave();
+    }
+  };
+
+  r.onerror = (e) => {
+    setStatus(`Mic error: ${e.error || "unknown"}`);
+    stopVoice();
+  };
+
+  r.onend = () => {
+    // Chrome may stop automatically after a pause
+    recognizing = false;
+    if (micBtn) micBtn.textContent = "Mic";
+    setStatus("");
+  };
+
+  recognition = r;
+  return r;
+}
+
+function insertAtCursor(textarea, text) {
+  const el = textarea;
+  if (!el) return;
+
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+
+  const before = el.value.slice(0, start);
+  const after = el.value.slice(end);
+
+  // Add a space if needed
+  const needsSpace =
+    before.length && !/\s$/.test(before) && text.length && !/^\s/.test(text);
+
+  const toInsert = (needsSpace ? " " : "") + text;
+
+  el.value = before + toInsert + after;
+
+  const pos = (before + toInsert).length;
+  el.selectionStart = el.selectionEnd = pos;
+  el.focus();
+}
+
+function startVoice() {
+  const r = ensureRecognition();
+  if (!r) {
+    setStatus("Voice typing not supported in this browser.");
+    return;
+  }
+  if (recognizing) return;
+
+  try {
+    recognizing = true;
+    micBtn.textContent = "Stop";
+    setStatus("Listening…");
+    r.start();
+  } catch {
+    // start() can throw if called twice quickly
+  }
+}
+
+function stopVoice() {
+  if (!recognition) return;
+  try {
+    recognition.stop();
+  } catch {}
+  recognizing = false;
+  if (micBtn) micBtn.textContent = "Mic";
+}
+
+micBtn?.addEventListener("click", () => {
+  if (!isSpeechSupported()) {
+    setStatus("Voice typing not supported in this browser.");
+    return;
+  }
+  recognizing ? stopVoice() : startVoice();
+});
+/////////////////////////////////
+
+// ...existing code...
+
+async function requestMicPermission() {
+  // Triggers the browser permission prompt (or throws if blocked)
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // We only need permission; stop immediately
+  stream.getTracks().forEach(t => t.stop());
+}
+
+function startVoice() {
+  const r = ensureRecognition();
+  if (!r) {
+    setStatus("Voice typing not supported in this browser.");
+    return;
+  }
+  if (recognizing) return;
+
+  (async () => {
+    try {
+      // Make permission issues obvious
+      if (navigator.mediaDevices?.getUserMedia) {
+        await requestMicPermission();
+      }
+
+      recognizing = true;
+      micBtn.textContent = "Stop";
+      setStatus("Listening…");
+      r.start();
+    } catch (err) {
+      const msg = err?.name || err?.message || String(err);
+      setStatus(`Mic blocked/unavailable: ${msg}`);
+      recognizing = false;
+      micBtn.textContent = "Mic";
+    }
+  })();
+}
+
+// Improve error detail
+function ensureRecognition() {
+  if (recognition) return recognition;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = true;
+  r.lang = navigator.language || "en-US";
+
+  let finalBuffer = "";
+
+  r.onresult = (event) => {
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const res = event.results[i];
+      const text = res[0]?.transcript || "";
+      if (res.isFinal) finalBuffer += text;
+      else interim += text;
+    }
+
+    setStatus(interim ? `Listening… ${interim}` : "Listening…");
+
+    if (finalBuffer.trim()) {
+      insertAtCursor(bodyInput, finalBuffer);
+      finalBuffer = "";
+      scheduleAutosave();
+    }
+  };
+
+  r.onerror = (e) => {
+    // e.error is the key: "not-allowed", "service-not-allowed", "no-speech", "audio-capture", etc.
+    setStatus(`Mic error: ${e.error || "unknown"}`);
+    stopVoice();
+  };
+
+  r.onend = () => {
+    recognizing = false;
+    if (micBtn) micBtn.textContent = "Mic";
+    setStatus("");
+  };
+
+  recognition = r;
+  return r;
+}
+
+// ...existing code...
+
+/////////////////////////////////////////
 function setStatus(text) {
   if (!saveStatus) return;
   saveStatus.textContent = text || "";
@@ -128,6 +329,8 @@ function openNote(id) {
     currentId = id;
     titleInput.value = note.title || "";
     bodyInput.value = note.body || "";
+    let recognition = null;
+    let recognizing = false;
 
     lastLoadedSnapshot = snapshotCurrent();
     setStatus("");
@@ -148,6 +351,103 @@ function newNote() {
   lastLoadedSnapshot = snapshotCurrent();
   setStatus("");
 
+    function isSpeechSupported() {
+      return "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+    }
+
+    function ensureRecognition() {
+      if (recognition) return recognition;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+
+      const r = new SR();
+      r.continuous = true;
+      r.interimResults = true;
+      r.lang = navigator.language || "en-US";
+
+      let finalBuffer = "";
+
+      r.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          const text = res[0]?.transcript || "";
+          if (res.isFinal) finalBuffer += text;
+          else interim += text;
+        }
+        setStatus(interim ? `Listening… ${interim}` : "Listening…");
+        if (finalBuffer.trim()) {
+          insertAtCursor(bodyInput, finalBuffer);
+          finalBuffer = "";
+          scheduleAutosave();
+        }
+      };
+
+      r.onerror = (e) => {
+        setStatus(`Mic error: ${e.error || "unknown"}`);
+        stopVoice();
+      };
+
+      r.onend = () => {
+        recognizing = false;
+        if (micBtn) micBtn.textContent = "🎤";
+        setStatus("");
+      };
+
+      recognition = r;
+      return r;
+    }
+
+    function insertAtCursor(textarea, text) {
+      const el = textarea;
+      if (!el) return;
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? el.value.length;
+      const before = el.value.slice(0, start);
+      const after = el.value.slice(end);
+      const needsSpace = before.length && !/\s$/.test(before) && text.length && !/^\s/.test(text);
+      const toInsert = (needsSpace ? " " : "") + text;
+      el.value = before + toInsert + after;
+      const pos = (before + toInsert).length;
+      el.selectionStart = el.selectionEnd = pos;
+      el.focus();
+    }
+
+    function startVoice() {
+      const r = ensureRecognition();
+      if (!r) {
+        setStatus("Voice typing not supported in this browser.");
+        return;
+      }
+      if (recognizing) return;
+      try {
+        recognizing = true;
+        micBtn.textContent = "⏹️";
+        setStatus("Listening…");
+        r.start();
+      } catch {
+        // start() can throw if called twice quickly
+      }
+    }
+
+    function stopVoice() {
+      if (!recognition) return;
+      try {
+        recognition.stop();
+      } catch {}
+      recognizing = false;
+      if (micBtn) micBtn.textContent = "🎤";
+    }
+
+    micBtn?.addEventListener("click", () => {
+      if (!isSpeechSupported()) {
+        setStatus("Voice typing not supported in this browser.");
+        return;
+      }
+      recognizing ? stopVoice() : startVoice();
+    });
+
+    // --- End Voice to Text ---
   listView.classList.add("hidden");
   editorView.classList.remove("hidden");
 

@@ -3,7 +3,7 @@
   "name": "Bunny Book",
   "version": "1.0",
   "description": "A cozy multi-note notepad/book.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "audioCapture"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

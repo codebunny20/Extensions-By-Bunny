@@ -1,0 +1,162 @@
+:root {
+  --bg: #f4f8ff;
+  --panel: #ffffff;
+  --panel-2: #eef4ff;
+  --text: #1f2a3d;
+  --muted: #5b6780;
+  --border: #cdd8ef;
+  --accent: #2e7dff;
+  --accent-2: #4fb8a8;
+  --danger: #c63b3b;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 320px;
+  background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+  color: var(--text);
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+
+.app {
+  padding: 12px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.app-header p {
+  margin: 4px 0 12px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+label {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+select,
+input,
+button {
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+select,
+input {
+  background: var(--panel);
+  color: var(--text);
+  padding: 8px;
+}
+
+button {
+  margin-top: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 9px;
+}
+
+button.secondary {
+  background: #6e7b96;
+}
+
+.tool-picker {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.tool-section {
+  display: none;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.tool-section.is-active {
+  display: block;
+}
+
+.calc-display {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #fff;
+  text-align: right;
+  font-size: 1.4rem;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.calc-grid button {
+  margin: 0;
+  padding: 11px;
+}
+
+.calc-grid .wide {
+  grid-column: span 4;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.row-actions button {
+  margin-top: 10px;
+}
+
+.result {
+  display: block;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  min-height: 40px;
+  white-space: pre-wrap;
+}
+
+.result-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.result-block p {
+  margin: 6px 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
