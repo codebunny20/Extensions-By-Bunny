@@ -156,6 +156,11 @@ button.secondary {
   margin: 6px 0;
 }
 
+#tool-battery #bat-series-line,
+#tool-battery #bat-parallel-line {
+  font-weight: 600;
+}
+
 .hidden {
   display: none;
 }

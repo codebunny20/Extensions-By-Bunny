@@ -17,6 +17,7 @@
   initRatioCalculator();
   initOhmsTool();
   initResistorCalculator();
+  initBatteryCalculator();
   switchTool(toolSelect.value);
 
   function initCalculator() {
@@ -97,6 +98,9 @@
 
       if (button.dataset.key) {
         const key = button.dataset.key;
+        if (expression === "Error") {
+          expression = "";
+        }
         if (key === ".") {
           const parts = expression.split(/[+\-*/]/);
           const currentPart = parts[parts.length - 1] || "";
@@ -109,7 +113,7 @@
 
       if (button.dataset.op) {
         const op = button.dataset.op;
-        if (!expression) {
+        if (!expression || expression === "Error") {
           return;
         }
         if ("+-*/".includes(expression.slice(-1))) {
@@ -129,7 +133,8 @@
 
     equalsBtn.addEventListener("click", () => {
       try {
-        const result = evaluateExpression(expression);
+        const normalizedExpression = expression.replace(/[+\-*/]+$/, "");
+        const result = evaluateExpression(normalizedExpression);
         expression = Number.isFinite(result) ? String(result) : "Error";
       } catch (error) {
         expression = "Error";
@@ -486,6 +491,58 @@
       }
 
       noteLine.textContent = notes.join(" ") || "Validate in real operating conditions before finalizing.";
+    });
+  }
+
+  function initBatteryCalculator() {
+    const voltageEl = document.getElementById("bat-voltage");
+    const currentEl = document.getElementById("bat-current");
+    const countEl = document.getElementById("bat-count");
+    const calcBtn = document.getElementById("bat-calc");
+    const clearBtn = document.getElementById("bat-clear");
+
+    const resultWrap = document.getElementById("bat-result");
+    const seriesLine = document.getElementById("bat-series-line");
+    const parallelLine = document.getElementById("bat-parallel-line");
+    const noteLine = document.getElementById("bat-note-line");
+
+    function formatNumber(value) {
+      const rounded = Math.round(value * 10000) / 10000;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toString();
+    }
+
+    calcBtn.addEventListener("click", () => {
+      const voltage = parseFloat(voltageEl.value);
+      const current = parseFloat(currentEl.value);
+      const count = parseInt(countEl.value, 10);
+
+      resultWrap.classList.remove("hidden");
+
+      if (!Number.isFinite(voltage) || voltage <= 0 || !Number.isFinite(current) || current <= 0 || !Number.isInteger(count) || count <= 0) {
+        seriesLine.textContent = "Enter valid positive values for voltage, current, and count.";
+        parallelLine.textContent = "";
+        noteLine.textContent = "";
+        return;
+      }
+
+      const seriesVoltage = voltage * count;
+      const seriesCurrent = current;
+      const parallelVoltage = voltage;
+      const parallelCurrent = current * count;
+
+      seriesLine.textContent = "Series total: " + formatNumber(seriesVoltage) + " V, " + formatNumber(seriesCurrent) + " A";
+      parallelLine.textContent = "Parallel total: " + formatNumber(parallelVoltage) + " V, " + formatNumber(parallelCurrent) + " A";
+      noteLine.textContent = "Assumes identical batteries with the same voltage and current rating.";
+    });
+
+    clearBtn.addEventListener("click", () => {
+      voltageEl.value = "";
+      currentEl.value = "";
+      countEl.value = "";
+      resultWrap.classList.add("hidden");
+      seriesLine.textContent = "";
+      parallelLine.textContent = "";
+      noteLine.textContent = "";
     });
   }
 })();

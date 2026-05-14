@@ -31,7 +31,7 @@ if (window.__readingRulerInjected) {
   readingOverlay.style.pointerEvents = 'none';
   readingOverlay.style.zIndex = '9998';
   readingOverlay.style.display = 'none';
-  document.body.appendChild(readingOverlay);
+  (document.body || document.documentElement).appendChild(readingOverlay);
 
   const readingRuler = document.createElement('div');
   readingRuler.style.position = 'fixed';
@@ -41,7 +41,7 @@ if (window.__readingRulerInjected) {
   readingRuler.style.zIndex = '9999';
   readingRuler.style.display = 'none';
   readingRuler.style.backgroundColor = 'rgba(228, 239, 238, 0.15)';
-  document.body.appendChild(readingRuler);
+  (document.body || document.documentElement).appendChild(readingRuler);
 
   const brightenLayer = document.createElement('div');
   brightenLayer.style.position = 'absolute';
@@ -78,7 +78,7 @@ if (window.__readingRulerInjected) {
   hintPopup.style.opacity = '0';
   hintPopup.style.transition = 'opacity 0.25s ease';
   hintPopup.style.pointerEvents = 'none';
-  document.body.appendChild(hintPopup);
+  (document.body || document.documentElement).appendChild(hintPopup);
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -95,8 +95,8 @@ if (window.__readingRulerInjected) {
   }
 
   function updateOverlayClip(yCenter) {
-    const top = yCenter - rulerHeight / 2;
-    const bottom = yCenter + rulerHeight / 2;
+    const top = clamp(yCenter - rulerHeight / 2, 0, window.innerHeight);
+    const bottom = clamp(yCenter + rulerHeight / 2, 0, window.innerHeight);
     const vh = window.innerHeight;
 
     readingOverlay.style.clipPath = `polygon(
@@ -118,8 +118,9 @@ if (window.__readingRulerInjected) {
 
   function renderRulerPosition() {
     animationFrameId = 0;
-    readingRuler.style.top = `${lastYCenter - rulerHeight / 2}px`;
-    updateOverlayClip(lastYCenter);
+    const clampedYCenter = clamp(lastYCenter, 0, window.innerHeight);
+    readingRuler.style.top = `${clampedYCenter - rulerHeight / 2}px`;
+    updateOverlayClip(clampedYCenter);
   }
 
   function scheduleRulerRender() {
@@ -134,6 +135,9 @@ if (window.__readingRulerInjected) {
 
     if (rulerEnabled) {
       scheduleRulerRender();
+    } else if (animationFrameId !== 0) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = 0;
     }
   }
 
@@ -205,7 +209,7 @@ if (window.__readingRulerInjected) {
 
     if (!rulerEnabled) return;
 
-    if (e.key === 'ArrowUp') {
+    if (key === 'arrowup') {
       e.preventDefault();
       rulerHeight = clamp(rulerHeight + 4, MIN_RULER_HEIGHT, MAX_RULER_HEIGHT);
       renderOverlayStyle();
@@ -215,7 +219,7 @@ if (window.__readingRulerInjected) {
       return;
     }
 
-    if (e.key === 'ArrowDown') {
+    if (key === 'arrowdown') {
       e.preventDefault();
       rulerHeight = clamp(rulerHeight - 4, MIN_RULER_HEIGHT, MAX_RULER_HEIGHT);
       renderOverlayStyle();
@@ -225,7 +229,7 @@ if (window.__readingRulerInjected) {
       return;
     }
 
-    if (e.key === 'ArrowLeft') {
+    if (key === 'arrowleft') {
       e.preventDefault();
       dimStrength = clamp(dimStrength + 0.05, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH);
       renderOverlayStyle();
@@ -234,7 +238,7 @@ if (window.__readingRulerInjected) {
       return;
     }
 
-    if (e.key === 'ArrowRight') {
+    if (key === 'arrowright') {
       e.preventDefault();
       dimStrength = clamp(dimStrength - 0.05, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH);
       renderOverlayStyle();
