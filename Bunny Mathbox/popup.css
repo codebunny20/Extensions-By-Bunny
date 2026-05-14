@@ -142,6 +142,10 @@ button.secondary {
   white-space: pre-wrap;
 }
 
+#tool-ratio .result {
+  line-height: 1.5;
+}
+
 .result-block {
   margin-top: 10px;
   padding-top: 10px;

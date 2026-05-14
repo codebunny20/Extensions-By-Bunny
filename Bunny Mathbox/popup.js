@@ -14,6 +14,7 @@
 
   initCalculator();
   initConverter();
+  initRatioCalculator();
   initOhmsTool();
   initResistorCalculator();
   switchTool(toolSelect.value);
@@ -271,6 +272,95 @@
 
     populateCategories();
     populateUnits();
+  }
+
+  function initRatioCalculator() {
+    const leftEl = document.getElementById("ratio-left");
+    const rightEl = document.getElementById("ratio-right");
+    const knownLeftEl = document.getElementById("ratio-known-left");
+    const knownRightEl = document.getElementById("ratio-known-right");
+    const calcBtn = document.getElementById("ratio-calc");
+    const clearBtn = document.getElementById("ratio-clear");
+    const resultEl = document.getElementById("ratio-result");
+
+    function gcd(a, b) {
+      let x = Math.abs(a);
+      let y = Math.abs(b);
+
+      while (y !== 0) {
+        const remainder = x % y;
+        x = y;
+        y = remainder;
+      }
+
+      return x || 1;
+    }
+
+    function decimalPlaces(value) {
+      const text = String(value);
+      if (!text.includes(".")) {
+        return 0;
+      }
+      return text.split(".")[1].length;
+    }
+
+    function simplifyRatio(left, right) {
+      const factor = Math.pow(10, Math.max(decimalPlaces(left), decimalPlaces(right)));
+      const scaledLeft = Math.round(left * factor);
+      const scaledRight = Math.round(right * factor);
+      const divisor = gcd(scaledLeft, scaledRight);
+
+      return [scaledLeft / divisor, scaledRight / divisor];
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(value)) {
+        return "-";
+      }
+
+      const rounded = Math.round(value * 1000000) / 1000000;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toString();
+    }
+
+    calcBtn.addEventListener("click", () => {
+      const left = parseFloat(leftEl.value);
+      const right = parseFloat(rightEl.value);
+      const knownLeft = parseFloat(knownLeftEl.value);
+      const knownRight = parseFloat(knownRightEl.value);
+
+      if (!Number.isFinite(left) || !Number.isFinite(right) || left === 0 || right === 0) {
+        resultEl.textContent = "Enter two non-zero ratio values.";
+        return;
+      }
+
+      const [simpleLeft, simpleRight] = simplifyRatio(left, right);
+      const lines = [
+        "Simplified ratio: " + formatNumber(simpleLeft) + ":" + formatNumber(simpleRight),
+        "Unit ratio: 1:" + formatNumber(right / left)
+      ];
+
+      if (Number.isFinite(knownLeft)) {
+        lines.push("If first value is " + formatNumber(knownLeft) + ", second value is " + formatNumber((knownLeft * right) / left) + ".");
+      }
+
+      if (Number.isFinite(knownRight)) {
+        lines.push("If second value is " + formatNumber(knownRight) + ", first value is " + formatNumber((knownRight * left) / right) + ".");
+      }
+
+      if (!Number.isFinite(knownLeft) && !Number.isFinite(knownRight)) {
+        lines.push("Enter either optional equivalent value field to solve for a matching ratio.");
+      }
+
+      resultEl.textContent = lines.join("\n");
+    });
+
+    clearBtn.addEventListener("click", () => {
+      leftEl.value = "";
+      rightEl.value = "";
+      knownLeftEl.value = "";
+      knownRightEl.value = "";
+      resultEl.textContent = "";
+    });
   }
 
   function initOhmsTool() {

@@ -6,174 +6,347 @@ let recognizing = false;
 
 const listView = document.getElementById("listView");
 const editorView = document.getElementById("editorView");
-const micBtn = document.getElementById("micBtn");
-
 const noteList = document.getElementById("noteList");
+const emptyState = document.getElementById("emptyState");
+const saveStatus = document.getElementById("saveStatus");
+
 const newNoteBtn = document.getElementById("newNote");
+const newNoteEmptyBtn = document.getElementById("newNoteEmpty");
 const saveBtn = document.getElementById("saveNote");
 const deleteBtn = document.getElementById("deleteNote");
 const exportBtn = document.getElementById("exportNote");
 const backBtn = document.getElementById("backToList");
+const micBtn = document.getElementById("micBtn");
 
 const titleInput = document.getElementById("titleInput");
 const bodyInput = document.getElementById("bodyInput");
-
 const searchInput = document.getElementById("searchInput");
-const emptyState = document.getElementById("emptyState");
-const newNoteEmpty = document.getElementById("newNoteEmpty");
-const saveStatus = document.getElementById("saveStatus");
 
-function isSpeechSupported() {
-  return "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+function setStatus(text) {
+  if (saveStatus) {
+    saveStatus.textContent = text || "";
+  }
 }
 
-function ensureRecognition() {
-  if (recognition) return recognition;
+function normalize(text) {
+  return String(text || "").toLowerCase();
+}
 
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) return null;
+function fmtTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return (
+    d.toLocaleDateString(undefined, { month: "short", day: "2-digit" }) +
+    " " +
+    d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  );
+}
 
-  const r = new SR();
-  r.continuous = true;      // keep listening
-  r.interimResults = true;  // show partials
-  r.lang = navigator.language || "en-US";
+function snapshotCurrent() {
+  return {
+    title: titleInput.value.trim(),
+    body: bodyInput.value || ""
+  };
+}
 
-  let finalBuffer = "";
+function isDirty() {
+  const snap = snapshotCurrent();
+  return snap.title !== lastLoadedSnapshot.title || snap.body !== lastLoadedSnapshot.body;
+}
 
-  r.onresult = (event) => {
-    let interim = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const res = event.results[i];
-      const text = res[0]?.transcript || "";
-      if (res.isFinal) finalBuffer += text;
-      else interim += text;
+function withStorageGet(keys) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(keys, (data) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(data || {});
+    });
+  });
+}
+
+function withStorageSet(value) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set(value, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+async function loadNotes() {
+  try {
+    const data = await withStorageGet(["notes"]);
+    const notes = Array.isArray(data.notes) ? data.notes : [];
+    const q = normalize(searchInput?.value);
+
+    const filtered = q
+      ? notes.filter(
+          (n) => normalize(n.title).includes(q) || normalize(n.body).includes(q)
+        )
+      : notes;
+
+    noteList.innerHTML = "";
+    emptyState.classList.toggle("hidden", notes.length !== 0);
+
+    if (notes.length === 0) {
+      return;
     }
 
-    // Show interim in status; only commit finals into the textarea
-    setStatus(interim ? `Listening… ${interim}` : "Listening…");
+    filtered
+      .slice()
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+      .forEach((note) => {
+        const li = document.createElement("li");
+        li.className = "noteItem";
+        li.setAttribute("role", "listitem");
 
-    if (finalBuffer.trim()) {
-      insertAtCursor(bodyInput, finalBuffer);
-      finalBuffer = "";
-      scheduleAutosave();
+        const top = document.createElement("div");
+        top.className = "noteRowTop";
+
+        const title = document.createElement("div");
+        title.className = "noteTitle";
+        title.textContent = note.title || "(untitled)";
+
+        const meta = document.createElement("div");
+        meta.className = "noteMeta";
+        meta.textContent = fmtTime(note.updatedAt || note.createdAt);
+
+        const preview = document.createElement("div");
+        preview.className = "notePreview";
+        preview.textContent = ((note.body || "").replace(/\s+/g, " ").trim() || "No content");
+
+        top.appendChild(title);
+        top.appendChild(meta);
+        li.appendChild(top);
+        li.appendChild(preview);
+
+        li.addEventListener("click", () => openNote(note.id));
+        noteList.appendChild(li);
+      });
+
+    if (filtered.length === 0) {
+      const li = document.createElement("li");
+      li.className = "noteItem";
+
+      const title = document.createElement("div");
+      title.className = "noteTitle";
+      title.textContent = "No matches";
+
+      const preview = document.createElement("div");
+      preview.className = "notePreview";
+      preview.textContent = "Try a different search.";
+
+      li.appendChild(title);
+      li.appendChild(preview);
+      noteList.appendChild(li);
     }
-  };
+  } catch (err) {
+    setStatus("Storage error");
+    console.error("loadNotes failed:", err);
+  }
+}
 
-  r.onerror = (e) => {
-    setStatus(`Mic error: ${e.error || "unknown"}`);
-    stopVoice();
-  };
+function showEditor() {
+  listView.classList.add("hidden");
+  editorView.classList.remove("hidden");
+}
 
-  r.onend = () => {
-    // Chrome may stop automatically after a pause
-    recognizing = false;
-    if (micBtn) micBtn.textContent = "Mic";
+function showList() {
+  editorView.classList.add("hidden");
+  listView.classList.remove("hidden");
+}
+
+async function openNote(id) {
+  stopVoice();
+
+  try {
+    const data = await withStorageGet(["notes"]);
+    const notes = Array.isArray(data.notes) ? data.notes : [];
+    const note = notes.find((n) => n.id === id);
+
+    if (!note) {
+      setStatus("Note not found");
+      return;
+    }
+
+    currentId = id;
+    titleInput.value = note.title || "";
+    bodyInput.value = note.body || "";
+    lastLoadedSnapshot = snapshotCurrent();
+
     setStatus("");
-  };
+    showEditor();
+    bodyInput.focus();
+  } catch (err) {
+    setStatus("Storage error");
+    console.error("openNote failed:", err);
+  }
+}
 
-  recognition = r;
-  return r;
+function newNote() {
+  stopVoice();
+  currentId = Date.now();
+  titleInput.value = "";
+  bodyInput.value = "";
+  lastLoadedSnapshot = snapshotCurrent();
+
+  setStatus("");
+  showEditor();
+  titleInput.focus();
+}
+
+function backToList() {
+  stopVoice();
+  clearTimeout(autosaveTimer);
+  autosaveTimer = 0;
+
+  currentId = null;
+  setStatus("");
+  showList();
+
+  loadNotes();
+}
+
+async function saveNote({ stayInEditor = false, silent = false } = {}) {
+  const title = titleInput.value.trim();
+  const body = bodyInput.value || "";
+
+  try {
+    const data = await withStorageGet(["notes"]);
+    const notes = Array.isArray(data.notes) ? data.notes : [];
+    const now = Date.now();
+    const id = currentId || now;
+
+    const existing = notes.find((n) => n.id === id);
+    if (existing) {
+      existing.title = title;
+      existing.body = body;
+      existing.updatedAt = now;
+    } else {
+      notes.push({
+        id,
+        title,
+        body,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+
+    await withStorageSet({ notes });
+
+    currentId = id;
+    lastLoadedSnapshot = snapshotCurrent();
+    setStatus(silent ? "" : "Saved");
+
+    if (!stayInEditor) {
+      backToList();
+    }
+  } catch (err) {
+    setStatus("Save failed");
+    console.error("saveNote failed:", err);
+  }
+}
+
+function scheduleAutosave() {
+  clearTimeout(autosaveTimer);
+
+  if (!currentId) {
+    return;
+  }
+
+  if (!isDirty()) {
+    setStatus("");
+    return;
+  }
+
+  setStatus("Saving...");
+  autosaveTimer = setTimeout(() => {
+    saveNote({ stayInEditor: true, silent: true });
+  }, 600);
+}
+
+async function deleteCurrentNote() {
+  if (currentId == null) {
+    backToList();
+    return;
+  }
+
+  const title = titleInput.value.trim() || "(untitled)";
+  const ok = confirm(`Delete "${title}"?\nThis cannot be undone.`);
+  if (!ok) {
+    return;
+  }
+
+  try {
+    const data = await withStorageGet(["notes"]);
+    let notes = Array.isArray(data.notes) ? data.notes : [];
+    notes = notes.filter((n) => n.id !== currentId);
+    await withStorageSet({ notes });
+    backToList();
+  } catch (err) {
+    setStatus("Delete failed");
+    console.error("deleteCurrentNote failed:", err);
+  }
+}
+
+function sanitizeFilename(name) {
+  const cleaned = String(name || "note")
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+
+  return cleaned || "note";
+}
+
+function exportCurrentNote() {
+  const title = sanitizeFilename(titleInput.value.trim());
+  const body = bodyInput.value || "";
+
+  const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${title}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function isSpeechSupported() {
+  return "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
 }
 
 function insertAtCursor(textarea, text) {
-  const el = textarea;
-  if (!el) return;
+  if (!textarea) return;
 
-  const start = el.selectionStart ?? el.value.length;
-  const end = el.selectionEnd ?? el.value.length;
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
 
-  const before = el.value.slice(0, start);
-  const after = el.value.slice(end);
-
-  // Add a space if needed
-  const needsSpace =
-    before.length && !/\s$/.test(before) && text.length && !/^\s/.test(text);
-
+  const needsSpace = before.length > 0 && !/\s$/.test(before) && text.length > 0 && !/^\s/.test(text);
   const toInsert = (needsSpace ? " " : "") + text;
 
-  el.value = before + toInsert + after;
+  textarea.value = before + toInsert + after;
 
   const pos = (before + toInsert).length;
-  el.selectionStart = el.selectionEnd = pos;
-  el.focus();
+  textarea.selectionStart = pos;
+  textarea.selectionEnd = pos;
+  textarea.focus();
 }
 
-function startVoice() {
-  const r = ensureRecognition();
-  if (!r) {
-    setStatus("Voice typing not supported in this browser.");
-    return;
-  }
-  if (recognizing) return;
-
-  try {
-    recognizing = true;
-    micBtn.textContent = "Stop";
-    setStatus("Listening…");
-    r.start();
-  } catch {
-    // start() can throw if called twice quickly
-  }
-}
-
-function stopVoice() {
-  if (!recognition) return;
-  try {
-    recognition.stop();
-  } catch {}
-  recognizing = false;
-  if (micBtn) micBtn.textContent = "Mic";
-}
-
-micBtn?.addEventListener("click", () => {
-  if (!isSpeechSupported()) {
-    setStatus("Voice typing not supported in this browser.");
-    return;
-  }
-  recognizing ? stopVoice() : startVoice();
-});
-/////////////////////////////////
-
-// ...existing code...
-
-async function requestMicPermission() {
-  // Triggers the browser permission prompt (or throws if blocked)
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  // We only need permission; stop immediately
-  stream.getTracks().forEach(t => t.stop());
-}
-
-function startVoice() {
-  const r = ensureRecognition();
-  if (!r) {
-    setStatus("Voice typing not supported in this browser.");
-    return;
-  }
-  if (recognizing) return;
-
-  (async () => {
-    try {
-      // Make permission issues obvious
-      if (navigator.mediaDevices?.getUserMedia) {
-        await requestMicPermission();
-      }
-
-      recognizing = true;
-      micBtn.textContent = "Stop";
-      setStatus("Listening…");
-      r.start();
-    } catch (err) {
-      const msg = err?.name || err?.message || String(err);
-      setStatus(`Mic blocked/unavailable: ${msg}`);
-      recognizing = false;
-      micBtn.textContent = "Mic";
-    }
-  })();
-}
-
-// Improve error detail
 function ensureRecognition() {
   if (recognition) return recognition;
+
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return null;
 
@@ -186,14 +359,18 @@ function ensureRecognition() {
 
   r.onresult = (event) => {
     let interim = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
+
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
       const res = event.results[i];
       const text = res[0]?.transcript || "";
-      if (res.isFinal) finalBuffer += text;
-      else interim += text;
+      if (res.isFinal) {
+        finalBuffer += text;
+      } else {
+        interim += text;
+      }
     }
 
-    setStatus(interim ? `Listening… ${interim}` : "Listening…");
+    setStatus(interim ? `Listening: ${interim}` : "Listening...");
 
     if (finalBuffer.trim()) {
       insertAtCursor(bodyInput, finalBuffer);
@@ -203,7 +380,6 @@ function ensureRecognition() {
   };
 
   r.onerror = (e) => {
-    // e.error is the key: "not-allowed", "service-not-allowed", "no-speech", "audio-capture", etc.
     setStatus(`Mic error: ${e.error || "unknown"}`);
     stopVoice();
   };
@@ -211,379 +387,109 @@ function ensureRecognition() {
   r.onend = () => {
     recognizing = false;
     if (micBtn) micBtn.textContent = "Mic";
-    setStatus("");
+
+    if (editorView.classList.contains("hidden")) {
+      setStatus("");
+    }
   };
 
   recognition = r;
   return r;
 }
 
-// ...existing code...
-
-/////////////////////////////////////////
-function setStatus(text) {
-  if (!saveStatus) return;
-  saveStatus.textContent = text || "";
-}
-
-function fmtTime(ts) {
-  if (!ts) return "";
-  const d = new Date(ts);
-  // Keep it compact for the popup
-  return d.toLocaleDateString(undefined, { month: "short", day: "2-digit" }) + " " +
-         d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
-function normalize(s) {
-  return String(s || "").toLowerCase();
-}
-
-function snapshotCurrent() {
-  return { title: titleInput.value.trim(), body: bodyInput.value || "" };
-}
-
-function isDirty() {
-  const s = snapshotCurrent();
-  return s.title !== lastLoadedSnapshot.title || s.body !== lastLoadedSnapshot.body;
-}
-
-function scheduleAutosave() {
-  clearTimeout(autosaveTimer);
-  if (!currentId) return;
-
-  // Only autosave if something actually changed
-  if (!isDirty()) {
-    setStatus("");
+async function requestMicPermission() {
+  if (!navigator.mediaDevices?.getUserMedia) {
     return;
   }
 
-  setStatus("Saving…");
-  autosaveTimer = setTimeout(() => {
-    saveNote({ stayInEditor: true, silent: true });
-  }, 600);
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  stream.getTracks().forEach((track) => track.stop());
 }
 
-function loadNotes() {
-  chrome.storage.local.get(["notes"], data => {
-    const notes = data.notes || [];
-    const q = normalize(searchInput?.value);
+async function startVoice() {
+  const r = ensureRecognition();
+  if (!r) {
+    setStatus("Voice typing is not supported in this browser.");
+    return;
+  }
 
-    const filtered = q
-      ? notes.filter(n => normalize(n.title).includes(q) || normalize(n.body).includes(q))
-      : notes;
+  if (recognizing) {
+    return;
+  }
 
-    noteList.innerHTML = "";
+  try {
+    await requestMicPermission();
+    recognizing = true;
 
-    emptyState.classList.toggle("hidden", (notes.length !== 0));
-    if (notes.length === 0) return;
+    if (micBtn) micBtn.textContent = "Stop";
+    setStatus("Listening...");
 
-    filtered
-      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-      .forEach(n => {
-        const li = document.createElement("li");
-        li.className = "noteItem";
-        li.setAttribute("role", "listitem");
+    r.start();
+  } catch (err) {
+    recognizing = false;
+    if (micBtn) micBtn.textContent = "Mic";
 
-        const top = document.createElement("div");
-        top.className = "noteRowTop";
-
-        const title = document.createElement("div");
-        title.className = "noteTitle";
-        title.textContent = n.title || "(untitled)";
-
-        const meta = document.createElement("div");
-        meta.className = "noteMeta";
-        meta.textContent = fmtTime(n.updatedAt || n.createdAt);
-
-        const preview = document.createElement("div");
-        preview.className = "notePreview";
-        const previewText = (n.body || "").replace(/\s+/g, " ").trim();
-        preview.textContent = previewText || "No content";
-
-        top.appendChild(title);
-        top.appendChild(meta);
-
-        li.appendChild(top);
-        li.appendChild(preview);
-
-        li.onclick = () => openNote(n.id);
-        noteList.appendChild(li);
-      });
-
-    // If search filters everything out, show a gentle empty message inline
-    if (filtered.length === 0) {
-      const li = document.createElement("li");
-      li.className = "noteItem";
-      li.innerHTML = `<div class="noteTitle">No matches</div><div class="notePreview">Try a different search.</div>`;
-      noteList.appendChild(li);
-    }
-  });
+    const detail = err?.name || err?.message || String(err);
+    setStatus(`Mic blocked/unavailable: ${detail}`);
+  }
 }
 
-function openNote(id) {
-  chrome.storage.local.get(["notes"], data => {
-    const notes = data.notes || [];
-    const note = notes.find(n => n.id === id);
-    if (!note) return;
+function stopVoice() {
+  if (!recognition) {
+    return;
+  }
 
-    currentId = id;
-    titleInput.value = note.title || "";
-    bodyInput.value = note.body || "";
-    let recognition = null;
-    let recognizing = false;
+  try {
+    recognition.stop();
+  } catch (err) {
+    console.error("stopVoice failed:", err);
+  }
 
-    lastLoadedSnapshot = snapshotCurrent();
-    setStatus("");
-
-    listView.classList.add("hidden");
-    editorView.classList.remove("hidden");
-
-    // Put cursor into body for quick typing
-    bodyInput.focus();
-  });
+  recognizing = false;
+  if (micBtn) micBtn.textContent = "Mic";
 }
 
-function newNote() {
-  currentId = Date.now();
-  titleInput.value = "";
-  bodyInput.value = "";
+function wireEvents() {
+  newNoteBtn?.addEventListener("click", newNote);
+  newNoteEmptyBtn?.addEventListener("click", newNote);
+  saveBtn?.addEventListener("click", () => saveNote({ stayInEditor: false, silent: false }));
+  deleteBtn?.addEventListener("click", deleteCurrentNote);
+  exportBtn?.addEventListener("click", exportCurrentNote);
+  backBtn?.addEventListener("click", backToList);
 
-  lastLoadedSnapshot = snapshotCurrent();
-  setStatus("");
+  searchInput?.addEventListener("input", loadNotes);
+  titleInput?.addEventListener("input", scheduleAutosave);
+  bodyInput?.addEventListener("input", scheduleAutosave);
 
-    function isSpeechSupported() {
-      return "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+  micBtn?.addEventListener("click", () => {
+    if (!isSpeechSupported()) {
+      setStatus("Voice typing is not supported in this browser.");
+      return;
     }
 
-    function ensureRecognition() {
-      if (recognition) return recognition;
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return null;
-
-      const r = new SR();
-      r.continuous = true;
-      r.interimResults = true;
-      r.lang = navigator.language || "en-US";
-
-      let finalBuffer = "";
-
-      r.onresult = (event) => {
-        let interim = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i];
-          const text = res[0]?.transcript || "";
-          if (res.isFinal) finalBuffer += text;
-          else interim += text;
-        }
-        setStatus(interim ? `Listening… ${interim}` : "Listening…");
-        if (finalBuffer.trim()) {
-          insertAtCursor(bodyInput, finalBuffer);
-          finalBuffer = "";
-          scheduleAutosave();
-        }
-      };
-
-      r.onerror = (e) => {
-        setStatus(`Mic error: ${e.error || "unknown"}`);
-        stopVoice();
-      };
-
-      r.onend = () => {
-        recognizing = false;
-        if (micBtn) micBtn.textContent = "🎤";
-        setStatus("");
-      };
-
-      recognition = r;
-      return r;
-    }
-
-    function insertAtCursor(textarea, text) {
-      const el = textarea;
-      if (!el) return;
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-      const before = el.value.slice(0, start);
-      const after = el.value.slice(end);
-      const needsSpace = before.length && !/\s$/.test(before) && text.length && !/^\s/.test(text);
-      const toInsert = (needsSpace ? " " : "") + text;
-      el.value = before + toInsert + after;
-      const pos = (before + toInsert).length;
-      el.selectionStart = el.selectionEnd = pos;
-      el.focus();
-    }
-
-    function startVoice() {
-      const r = ensureRecognition();
-      if (!r) {
-        setStatus("Voice typing not supported in this browser.");
-        return;
-      }
-      if (recognizing) return;
-      try {
-        recognizing = true;
-        micBtn.textContent = "⏹️";
-        setStatus("Listening…");
-        r.start();
-      } catch {
-        // start() can throw if called twice quickly
-      }
-    }
-
-    function stopVoice() {
-      if (!recognition) return;
-      try {
-        recognition.stop();
-      } catch {}
-      recognizing = false;
-      if (micBtn) micBtn.textContent = "🎤";
-    }
-
-    micBtn?.addEventListener("click", () => {
-      if (!isSpeechSupported()) {
-        setStatus("Voice typing not supported in this browser.");
-        return;
-      }
-      recognizing ? stopVoice() : startVoice();
-    });
-
-    // --- End Voice to Text ---
-  listView.classList.add("hidden");
-  editorView.classList.remove("hidden");
-
-  titleInput.focus();
-}
-
-function backToList() {
-  clearTimeout(autosaveTimer);
-  autosaveTimer = 0;
-
-  editorView.classList.add("hidden");
-  listView.classList.remove("hidden");
-
-  setStatus("");
-  currentId = null;
-}
-
-function saveNote({ stayInEditor = false, silent = false } = {}) {
-  const title = titleInput.value.trim();
-  const body = bodyInput.value || "";
-
-  chrome.storage.local.get(["notes"], data => {
-    const notes = data.notes || [];
-    const now = Date.now();
-
-    const id = currentId || now;
-    let existing = notes.find(n => n.id === id);
-
-    if (existing) {
-      existing.title = title;
-      existing.body = body;
-      existing.updatedAt = now;
+    if (recognizing) {
+      stopVoice();
     } else {
-      existing = {
-        id,
-        title,
-        body,
-        createdAt: now,
-        updatedAt: now
-      };
-      notes.push(existing);
+      startVoice();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+
+    if (mod && e.key.toLowerCase() === "s" && !editorView.classList.contains("hidden")) {
+      e.preventDefault();
+      saveNote({ stayInEditor: true, silent: false });
     }
 
-    chrome.storage.local.set({ notes }, () => {
-      currentId = id;
-      lastLoadedSnapshot = snapshotCurrent();
-
-      if (!silent) setStatus("Saved");
-      else setStatus("");
-
-      if (!stayInEditor) {
-        backToList();
-        loadNotes();
-      }
-    });
-  });
-}
-
-function sanitizeFilename(name) {
-  const cleaned = String(name || "note")
-    .trim()
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
-    .replace(/\s+/g, " ")
-    .slice(0, 80);
-  return cleaned || "note";
-}
-
-newNoteBtn.onclick = newNote;
-newNoteEmpty?.addEventListener("click", newNote);
-
-saveBtn.onclick = () => saveNote({ stayInEditor: false, silent: false });
-
-deleteBtn.onclick = () => {
-  if (currentId == null) {
-    backToList();
-    return;
-  }
-
-  const title = titleInput.value.trim() || "(untitled)";
-  const ok = confirm(`Delete "${title}"?\nThis cannot be undone.`);
-  if (!ok) return;
-
-  chrome.storage.local.get(["notes"], data => {
-    let notes = data.notes || [];
-    notes = notes.filter(n => n.id !== currentId);
-    chrome.storage.local.set({ notes }, () => {
+    if (e.key === "Escape" && !editorView.classList.contains("hidden")) {
+      e.preventDefault();
       backToList();
-      loadNotes();
-    });
+    }
   });
-};
+}
 
-exportBtn.onclick = () => {
-  const title = sanitizeFilename(titleInput.value.trim());
-  const body = bodyInput.value || "";
-
-  const blob = new Blob([body], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${title}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  URL.revokeObjectURL(url);
-};
-
-backBtn.onclick = backToList;
-
-// Search as you type
-searchInput?.addEventListener("input", () => loadNotes());
-
-// Autosave on typing
-titleInput.addEventListener("input", scheduleAutosave);
-bodyInput.addEventListener("input", scheduleAutosave);
-
-// Keyboard shortcuts
-document.addEventListener("keydown", (e) => {
-  const isMac = navigator.platform.toLowerCase().includes("mac");
-  const mod = isMac ? e.metaKey : e.ctrlKey;
-
-  if (mod && e.key.toLowerCase() === "s") {
-    e.preventDefault();
-    saveNote({ stayInEditor: true, silent: false });
-  }
-
-  if (e.key === "Escape") {
-    // If in editor, go back
-    if (!editorView.classList.contains("hidden")) backToList();
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  setStatus("");
-  loadNotes();
-});
-// ...existing code...
+wireEvents();
+setStatus("");
+loadNotes();

@@ -1,4 +1,3 @@
-<!-- ...existing code... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +22,7 @@
 <div id="listView" class="view">
   <div class="listTools">
     <label class="srOnly" for="searchInput">Search notes</label>
-    <input id="searchInput" class="search" placeholder="Search notes…" autocomplete="off">
+    <input id="searchInput" class="search" placeholder="Search notes..." autocomplete="off">
   </div>
 
   <div id="emptyState" class="empty hidden">
@@ -37,17 +36,17 @@
 
 <div id="editorView" class="view hidden">
   <div class="editorHeader">
-    <input id="titleInput" class="title" placeholder="Title" maxlength="80">
+    <input id="titleInput" class="title" placeholder="Title" maxlength="80" aria-label="Note title">
     <button id="backToList" class="btn btnGhost" type="button" title="Back to list">Back</button>
   </div>
 
-  <textarea id="bodyInput" class="body" placeholder="Write here..."></textarea>
+  <textarea id="bodyInput" class="body" placeholder="Write here..." aria-label="Note body"></textarea>
 
   <div class="editorButtons">
     <button id="saveNote" class="btn btnPrimary" type="button">Save</button>
     <button id="exportNote" class="btn" type="button">Export</button>
     <button id="deleteNote" class="btn btnDanger" type="button">Delete</button>
-      <button id="micBtn" class="btn" type="button" title="Voice to text" aria-label="Voice to text" tabindex="0">🎤</button>
+    <button id="micBtn" class="btn" type="button" title="Voice to text" aria-label="Voice to text">Mic</button>
   </div>
 </div>
 

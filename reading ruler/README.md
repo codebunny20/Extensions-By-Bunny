@@ -2,6 +2,8 @@
 
 Reading Ruler adds a horizontal “reading window” that follows your mouse cursor. Everything outside the ruler is dimmed, helping you focus on the line you’re reading. The ruler area is subtly highlighted and slightly brightens the content underneath.
 
+This is the **v1.1 UI rework** with a simple extension popup for controls.
+
 ## What it does
 
 - **Follows your mouse** vertically with a fixed horizontal band (“ruler”).
@@ -9,11 +11,14 @@ Reading Ruler adds a horizontal “reading window” that follows your mouse cur
 - **Lets you adjust**:
   - Ruler height (thicker/thinner reading band)
   - Dim strength (darker/lighter surrounding area)
-- Shows a small on-screen hint when enabled with the available shortcuts.
+- **Popup UI controls** from the extension button.
+- **Remembers your settings** (ruler height and dim strength) between reloads.
+- Applies changes live across open tabs via synced settings.
 
 ## How to use
 
-## you can also find this extension on the crome web store just click the link here 👉 https://chromewebstore.google.com/detail/reading-ruler/pagchebmocafbblcgkoloijoagjmpagm
+You can also find this extension on the Chrome Web Store:
+https://chromewebstore.google.com/detail/reading-ruler/pagchebmocafbblcgkoloijoagjmpagm
 
 ### 1) Install (Load unpacked)
 1. Open Chrome and go to: `chrome://extensions/`
@@ -23,9 +28,16 @@ Reading Ruler adds a horizontal “reading window” that follows your mouse cur
    `c:\Users\Admin\OneDrive\Desktop\Extensions-By-Bunny\reading ruler`
 
 ### 2) Enable/Disable the ruler
-- **Toggle on/off:** `Ctrl + Shift + R`
+- Click the extension icon to open the popup.
+- Use **Enable ruler** to turn it on/off.
 
 When enabled, move your mouse up/down to move the ruler.
+
+### 3) Adjust settings in popup
+- Use **Ruler height** slider.
+- Use **Dim strength** slider.
+- Click **Reset** to go back to defaults.
+- Press **Esc** (or **Close**) to close popup.
 
 ## Keyboard shortcuts
 
@@ -49,5 +61,8 @@ When the ruler is enabled:
 
 ## Files
 - `manifest.json` — Chrome extension manifest (MV3)
-- `content.js` — Creates the overlay + ruler, tracks mouse movement, and handles shortcuts
+- `content.js` — Overlay + ruler logic, storage sync, and shortcuts
+- `popup.html` — Popup UI layout
+- `popup.css` — Popup styling
+- `popup.js` — Popup logic (save/reset/close)
 - `icons/16.png` — Extension icon

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Reading Ruler</title>
+	<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+	<main>
+		<section class="panel" aria-label="Reading ruler settings">
+			<h1>Reading Ruler</h1>
+			<p class="subtitle">Simple focus line controls</p>
+
+			<div class="row inline">
+				<label for="enabled">Enable ruler</label>
+				<input id="enabled" type="checkbox" />
+			</div>
+
+			<div class="row">
+				<label for="height">Ruler height</label>
+				<div id="heightValue" class="value">32px</div>
+				<input id="height" type="range" min="8" max="240" step="4" value="32" />
+			</div>
+
+			<div class="row">
+				<label for="dim">Dim strength</label>
+				<div id="dimValue" class="value">40%</div>
+				<input id="dim" type="range" min="5" max="95" step="5" value="40" />
+			</div>
+
+			<div class="footer">
+				<button id="resetBtn" class="ghost" type="button">Reset</button>
+				<button id="closeBtn" class="primary" type="button">Close</button>
+			</div>
+
+			<p class="hint">Shortcut support still works: Ctrl+Shift+R and arrows.</p>
+			<p class="hint">Press Esc to close this popup.</p>
+		</section>
+	</main>
+	<script src="popup.js"></script>
+</body>
+</html>

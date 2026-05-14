@@ -18,6 +18,7 @@
       <select id="tool-select">
         <option value="calculator">Standard Calculator</option>
         <option value="converter">Unit Converter</option>
+          <option value="ratio">Ratio Calculator</option>
         <option value="ohms">Quick Ohms Law Tool</option>
         <option value="resistor">Resistor Calculator</option>
       </select>
@@ -65,6 +66,27 @@
 
       <button type="button" id="conv-run">Convert</button>
       <output id="conv-result" class="result" aria-live="polite"></output>
+    </section>
+
+    <section id="tool-ratio" class="tool-section" data-tool="ratio">
+      <label for="ratio-left">First ratio value</label>
+      <input id="ratio-left" type="number" step="any" placeholder="e.g. 16" />
+
+      <label for="ratio-right">Second ratio value</label>
+      <input id="ratio-right" type="number" step="any" placeholder="e.g. 9" />
+
+      <label for="ratio-known-left">If first value becomes</label>
+      <input id="ratio-known-left" type="number" step="any" placeholder="e.g. 32" />
+
+      <label for="ratio-known-right">If second value becomes</label>
+      <input id="ratio-known-right" type="number" step="any" placeholder="e.g. 27" />
+
+      <div class="row-actions">
+        <button type="button" id="ratio-calc">Calculate</button>
+        <button type="button" id="ratio-clear" class="secondary">Clear</button>
+      </div>
+
+      <output id="ratio-result" class="result" aria-live="polite"></output>
     </section>
 
     <section id="tool-ohms" class="tool-section" data-tool="ohms">

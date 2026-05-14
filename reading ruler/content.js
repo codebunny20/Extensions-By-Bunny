@@ -1,163 +1,248 @@
-let dimStrength = 0.4; // overlay dim strength (0.05..0.95)
-let rulerHeight = 32;  // px height of reading window
-let rulerEnabled = false;
-let lastYCenter = Math.round(window.innerHeight / 2);
+if (window.__readingRulerInjected) {
+  // Avoid duplicate injection on same page lifecycle.
+} else {
+  window.__readingRulerInjected = true;
 
-// Create the overlay that darkens the page
-const readingOverlay = document.createElement('div');
-readingOverlay.style.transition = 'background-color 0.15s ease';
-readingOverlay.style.position = 'fixed';
-readingOverlay.style.top = '0';
-readingOverlay.style.left = '0';
-readingOverlay.style.width = '100%';
-readingOverlay.style.height = '100%';
-readingOverlay.style.backgroundColor = `rgba(0, 0, 0, ${dimStrength})`;
-readingOverlay.style.pointerEvents = 'none';
-readingOverlay.style.zIndex = '9998';
-readingOverlay.style.display = 'none';
-document.body.appendChild(readingOverlay);
+  const SETTINGS_KEY = 'readingRulerSettings';
+  const DEFAULTS = {
+    enabled: false,
+    rulerHeight: 32,
+    dimStrength: 0.4,
+  };
 
-// Create the ruler area (for clip path calculations)
-const readingRuler = document.createElement('div');
-readingRuler.style.position = 'fixed';
-readingRuler.style.left = '0';
-readingRuler.style.width = '100%';
-readingRuler.style.height = rulerHeight + 'px';
-readingRuler.style.backgroundColor = 'rgba(228, 239, 238, 0.15)'; // subtle highlight
-readingRuler.style.pointerEvents = 'none';
-readingRuler.style.zIndex = '9999';
-readingRuler.style.display = 'none';
-document.body.appendChild(readingRuler);
+  const MIN_RULER_HEIGHT = 8;
+  const MAX_RULER_HEIGHT = 240;
+  const MIN_DIM_STRENGTH = 0.05;
+  const MAX_DIM_STRENGTH = 0.95;
 
-// Lighten text under the ruler
-const brightenLayer = document.createElement('div');
-brightenLayer.style.position = 'absolute';
-brightenLayer.style.top = '0';
-brightenLayer.style.left = '0';
-brightenLayer.style.width = '100%';
-brightenLayer.style.height = '100%';
-brightenLayer.style.backdropFilter = 'brightness(1.5)';
-brightenLayer.style.pointerEvents = 'none';
-readingRuler.appendChild(brightenLayer);
+  let rulerEnabled = DEFAULTS.enabled;
+  let rulerHeight = DEFAULTS.rulerHeight;
+  let dimStrength = DEFAULTS.dimStrength;
+  let lastYCenter = Math.round(window.innerHeight / 2);
+  let animationFrameId = 0;
 
-// Small floating hint popup
-const hintPopup = document.createElement('div');
-hintPopup.style.position = 'fixed';
-hintPopup.style.bottom = '20px';
-hintPopup.style.right = '20px';
-hintPopup.style.padding = '8px 12px';
-hintPopup.style.background = 'rgba(0,0,0,0.75)';
-hintPopup.style.color = 'white';
-hintPopup.style.fontSize = '12px';
-hintPopup.style.borderRadius = '6px';
-hintPopup.style.zIndex = '10000';
-hintPopup.style.opacity = '0';
-hintPopup.style.transition = 'opacity 0.3s ease';
-hintPopup.style.pointerEvents = 'none';
-document.body.appendChild(hintPopup);
+  const readingOverlay = document.createElement('div');
+  readingOverlay.style.transition = 'background-color 0.15s ease';
+  readingOverlay.style.position = 'fixed';
+  readingOverlay.style.top = '0';
+  readingOverlay.style.left = '0';
+  readingOverlay.style.width = '100%';
+  readingOverlay.style.height = '100%';
+  readingOverlay.style.pointerEvents = 'none';
+  readingOverlay.style.zIndex = '9998';
+  readingOverlay.style.display = 'none';
+  document.body.appendChild(readingOverlay);
 
-function showHint(text) {
-  hintPopup.textContent = text;
-  hintPopup.style.opacity = '1';
+  const readingRuler = document.createElement('div');
+  readingRuler.style.position = 'fixed';
+  readingRuler.style.left = '0';
+  readingRuler.style.width = '100%';
+  readingRuler.style.pointerEvents = 'none';
+  readingRuler.style.zIndex = '9999';
+  readingRuler.style.display = 'none';
+  readingRuler.style.backgroundColor = 'rgba(228, 239, 238, 0.15)';
+  document.body.appendChild(readingRuler);
 
-  clearTimeout(showHint._timer);
-  showHint._timer = setTimeout(() => {
-    hintPopup.style.opacity = '0';
-  }, 10000);
-}
+  const brightenLayer = document.createElement('div');
+  brightenLayer.style.position = 'absolute';
+  brightenLayer.style.top = '0';
+  brightenLayer.style.left = '0';
+  brightenLayer.style.width = '100%';
+  brightenLayer.style.height = '100%';
+  brightenLayer.style.pointerEvents = 'none';
 
-function updateOverlayClip(yCenter) {
-  const top = yCenter - rulerHeight / 2;
-  const bottom = yCenter + rulerHeight / 2;
-  const vh = window.innerHeight;
+  const supportsBackdropFilter =
+    typeof CSS !== 'undefined' &&
+    (CSS.supports('backdrop-filter', 'brightness(1.5)') ||
+      CSS.supports('-webkit-backdrop-filter', 'brightness(1.5)'));
 
-  // Create a rectangle "hole" where the ruler is
-  readingOverlay.style.clipPath = `polygon(
-    0px 0px,
-    100% 0px,
-    100% ${top}px,
-    0px ${top}px,
-    0px ${bottom}px,
-    100% ${bottom}px,
-    100% ${vh}px,
-    0px ${vh}px
-  )`;
-}
+  if (supportsBackdropFilter) {
+    brightenLayer.style.backdropFilter = 'brightness(1.5)';
+    brightenLayer.style.webkitBackdropFilter = 'brightness(1.5)';
+  } else {
+    brightenLayer.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+  }
 
-function updateRulerHeight(newHeight) {
-  rulerHeight = newHeight;
-  readingRuler.style.height = newHeight + 'px';
-  readingRuler.style.top = `${lastYCenter - rulerHeight / 2}px`;
-  updateOverlayClip(lastYCenter);
-}
+  readingRuler.appendChild(brightenLayer);
 
-function updateDimStrength(newStrength) {
-  dimStrength = Math.min(0.95, Math.max(0.05, newStrength)); // clamp between 5% and 95%
-  readingOverlay.style.backgroundColor = `rgba(0, 0, 0, ${dimStrength})`;
-}
+  const hintPopup = document.createElement('div');
+  hintPopup.style.position = 'fixed';
+  hintPopup.style.bottom = '20px';
+  hintPopup.style.left = '20px';
+  hintPopup.style.padding = '8px 12px';
+  hintPopup.style.background = 'rgba(0,0,0,0.75)';
+  hintPopup.style.color = 'white';
+  hintPopup.style.fontSize = '12px';
+  hintPopup.style.borderRadius = '6px';
+  hintPopup.style.zIndex = '10000';
+  hintPopup.style.opacity = '0';
+  hintPopup.style.transition = 'opacity 0.25s ease';
+  hintPopup.style.pointerEvents = 'none';
+  document.body.appendChild(hintPopup);
 
-function setEnabled(on) {
-  rulerEnabled = on;
-  readingRuler.style.display = rulerEnabled ? 'block' : 'none';
-  readingOverlay.style.display = rulerEnabled ? 'block' : 'none';
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
 
-  if (rulerEnabled) {
+  function showHint(text) {
+    hintPopup.textContent = text;
+    hintPopup.style.opacity = '1';
+
+    clearTimeout(showHint._timer);
+    showHint._timer = setTimeout(() => {
+      hintPopup.style.opacity = '0';
+    }, 2000);
+  }
+
+  function updateOverlayClip(yCenter) {
+    const top = yCenter - rulerHeight / 2;
+    const bottom = yCenter + rulerHeight / 2;
+    const vh = window.innerHeight;
+
+    readingOverlay.style.clipPath = `polygon(
+      0px 0px,
+      100% 0px,
+      100% ${top}px,
+      0px ${top}px,
+      0px ${bottom}px,
+      100% ${bottom}px,
+      100% ${vh}px,
+      0px ${vh}px
+    )`;
+  }
+
+  function renderOverlayStyle() {
+    readingOverlay.style.backgroundColor = `rgba(0, 0, 0, ${dimStrength})`;
+    readingRuler.style.height = rulerHeight + 'px';
+  }
+
+  function renderRulerPosition() {
+    animationFrameId = 0;
     readingRuler.style.top = `${lastYCenter - rulerHeight / 2}px`;
     updateOverlayClip(lastYCenter);
-    showHint(
-      'Height: Ctrl+Shift+Up/Down   •   Dim: Ctrl+Shift+Left/Right'
-    );    
   }
+
+  function scheduleRulerRender() {
+    if (animationFrameId !== 0) return;
+    animationFrameId = requestAnimationFrame(renderRulerPosition);
+  }
+
+  function setEnabled(on) {
+    rulerEnabled = !!on;
+    readingRuler.style.display = rulerEnabled ? 'block' : 'none';
+    readingOverlay.style.display = rulerEnabled ? 'block' : 'none';
+
+    if (rulerEnabled) {
+      scheduleRulerRender();
+    }
+  }
+
+  function applySettings(nextSettings) {
+    const safe = {
+      enabled:
+        typeof nextSettings.enabled === 'boolean' ? nextSettings.enabled : DEFAULTS.enabled,
+      rulerHeight:
+        typeof nextSettings.rulerHeight === 'number'
+          ? clamp(nextSettings.rulerHeight, MIN_RULER_HEIGHT, MAX_RULER_HEIGHT)
+          : DEFAULTS.rulerHeight,
+      dimStrength:
+        typeof nextSettings.dimStrength === 'number'
+          ? clamp(nextSettings.dimStrength, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH)
+          : DEFAULTS.dimStrength,
+    };
+
+    rulerHeight = safe.rulerHeight;
+    dimStrength = safe.dimStrength;
+    renderOverlayStyle();
+    setEnabled(safe.enabled);
+  }
+
+  function loadInitialSettings() {
+    chrome.storage.sync.get([SETTINGS_KEY], (result) => {
+      applySettings(result[SETTINGS_KEY] || DEFAULTS);
+    });
+  }
+
+  function persistCurrentSettings() {
+    chrome.storage.sync.set({
+      [SETTINGS_KEY]: {
+        enabled: rulerEnabled,
+        rulerHeight,
+        dimStrength,
+      },
+    });
+  }
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'sync' || !changes[SETTINGS_KEY]) return;
+    const next = changes[SETTINGS_KEY].newValue || DEFAULTS;
+    applySettings(next);
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!rulerEnabled) return;
+    lastYCenter = e.clientY;
+    scheduleRulerRender();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!rulerEnabled) return;
+    scheduleRulerRender();
+  });
+
+  // Keep keyboard controls as a quick-access alternative.
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey && e.shiftKey)) return;
+
+    const key = e.key.toLowerCase();
+
+    if (key === 'r') {
+      setEnabled(!rulerEnabled);
+      persistCurrentSettings();
+      showHint(rulerEnabled ? 'Reading Ruler on' : 'Reading Ruler off');
+      return;
+    }
+
+    if (!rulerEnabled) return;
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      rulerHeight = clamp(rulerHeight + 4, MIN_RULER_HEIGHT, MAX_RULER_HEIGHT);
+      renderOverlayStyle();
+      scheduleRulerRender();
+      persistCurrentSettings();
+      showHint('Height: ' + rulerHeight + 'px');
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      rulerHeight = clamp(rulerHeight - 4, MIN_RULER_HEIGHT, MAX_RULER_HEIGHT);
+      renderOverlayStyle();
+      scheduleRulerRender();
+      persistCurrentSettings();
+      showHint('Height: ' + rulerHeight + 'px');
+      return;
+    }
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      dimStrength = clamp(dimStrength + 0.05, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH);
+      renderOverlayStyle();
+      persistCurrentSettings();
+      showHint('Dim: ' + Math.round(dimStrength * 100) + '%');
+      return;
+    }
+
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      dimStrength = clamp(dimStrength - 0.05, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH);
+      renderOverlayStyle();
+      persistCurrentSettings();
+      showHint('Dim: ' + Math.round(dimStrength * 100) + '%');
+    }
+  });
+
+  renderOverlayStyle();
+  loadInitialSettings();
 }
-
-document.addEventListener('mousemove', (e) => {
-  if (!rulerEnabled) return;
-
-  lastYCenter = e.clientY;
-  readingRuler.style.top = `${lastYCenter - rulerHeight / 2}px`;
-  updateOverlayClip(lastYCenter);
-});
-
-window.addEventListener('resize', () => {
-  if (!rulerEnabled) return;
-  updateOverlayClip(lastYCenter);
-});
-
-// Toggle with Ctrl+Shift+R
-document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'r') {
-    setEnabled(!rulerEnabled);
-  }
-});
-
-// Adjustable ruler height: Ctrl+Shift+Up / Ctrl+Shift+Down
-document.addEventListener('keydown', (e) => {
-  if (!rulerEnabled) return;
-
-  if (e.ctrlKey && e.shiftKey && e.key === 'ArrowUp') {
-    const newHeight = rulerHeight + 4;
-    updateRulerHeight(newHeight);
-    showHint('Ruler height: ' + newHeight + 'px');
-  }
-
-  if (e.ctrlKey && e.shiftKey && e.key === 'ArrowDown') {
-    const newHeight = Math.max(8, rulerHeight - 4);
-    updateRulerHeight(newHeight);
-    showHint('Ruler height: ' + newHeight + 'px');
-  }
-});
-
-// Adjustable dim strength: Ctrl+Shift+Left (darker) / Ctrl+Shift+Right (lighter)
-document.addEventListener('keydown', (e) => {
-  if (!rulerEnabled) return;
-
-  if (e.ctrlKey && e.shiftKey && e.key === 'ArrowLeft') {
-    updateDimStrength(dimStrength + 0.05);
-    showHint('Dim: ' + Math.round(dimStrength * 100) + '%');
-  }
-
-  if (e.ctrlKey && e.shiftKey && e.key === 'ArrowRight') {
-    updateDimStrength(dimStrength - 0.05);
-    showHint('Dim: ' + Math.round(dimStrength * 100) + '%');
-  }
-});
