@@ -20,12 +20,8 @@ This is the **v1.1 UI rework** with a simple extension popup for controls.
 You can also find this extension on the Chrome Web Store:
 https://chromewebstore.google.com/detail/reading-ruler/pagchebmocafbblcgkoloijoagjmpagm
 
-### 1) Install (Load unpacked)
-1. Open Chrome and go to: `chrome://extensions/`
-2. Enable **Developer mode** (top-right).
-3. Click **Load unpacked**.
-4. Select this folder:
-   `c:\Users\Admin\OneDrive\Desktop\Extensions-By-Bunny\reading ruler`
+### 1) 
+https://github.com/codebunny20/Extensions-By-Bunny
 
 ### 2) Enable/Disable the ruler
 - Click the extension icon to open the popup.
