@@ -1,10 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "Bunny Mathbox",
+  "name": "Mathbox",
   "version": "1.0.0",
   "description": "Calculator and converter tools all in one place.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Bunny Mathbox"
+    "default_title": "Mathbox",
+    "default_icon": {
+      "16": "icons/icon16.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png"
   }
+
 }
