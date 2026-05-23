@@ -16,5 +16,8 @@
             "matches": ["<all_urls>"],
             "js": ["scroll.js"]
         }
-    ]
+    ],
+    "icons": {
+        "16": "icons/icon16.png"
+    }
 }
