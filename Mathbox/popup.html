@@ -20,6 +20,7 @@
         <option value="converter">Unit Converter</option>
           <option value="ratio">Ratio Calculator</option>
         <option value="ohms">Quick Ohms Law Tool</option>
+        <option value="voltage">Voltage Calculator</option>
         <option value="resistor">Resistor Calculator</option>
         <option value="battery">Battery Calculator</option>
       </select>
@@ -108,6 +109,24 @@
         <button type="button" id="ohm-clear" class="secondary">Clear</button>
       </div>
       <output id="ohm-result" class="result" aria-live="polite"></output>
+    </section>
+
+    <section id="tool-voltage" class="tool-section" data-tool="voltage">
+      <label for="volt-current">Current (I in A)</label>
+      <input id="volt-current" type="number" step="any" placeholder="e.g. 2" />
+
+      <label for="volt-resistance">Resistance (R in ohm)</label>
+      <input id="volt-resistance" type="number" step="any" placeholder="e.g. 5" />
+
+      <label for="volt-power">Power (P in W)</label>
+      <input id="volt-power" type="number" step="any" placeholder="e.g. 20" />
+
+      <div class="row-actions">
+        <button type="button" id="volt-calc">Calculate Voltage</button>
+        <button type="button" id="volt-clear" class="secondary">Clear</button>
+      </div>
+
+      <output id="volt-result" class="result" aria-live="polite"></output>
     </section>
 
     <section id="tool-resistor" class="tool-section" data-tool="resistor">

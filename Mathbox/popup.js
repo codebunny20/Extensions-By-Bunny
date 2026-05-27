@@ -16,6 +16,7 @@
   initConverter();
   initRatioCalculator();
   initOhmsTool();
+  initVoltageCalculator();
   initResistorCalculator();
   initBatteryCalculator();
   switchTool(toolSelect.value);
@@ -427,6 +428,73 @@
       resistance.value = "";
       power.value = "";
       result.textContent = "";
+    });
+  }
+
+  function initVoltageCalculator() {
+    const currentEl = document.getElementById("volt-current");
+    const resistanceEl = document.getElementById("volt-resistance");
+    const powerEl = document.getElementById("volt-power");
+    const calcBtn = document.getElementById("volt-calc");
+    const clearBtn = document.getElementById("volt-clear");
+    const resultEl = document.getElementById("volt-result");
+
+    if (!currentEl || !resistanceEl || !powerEl || !calcBtn || !clearBtn || !resultEl) {
+      return;
+    }
+
+    function formatNumber(value) {
+      const rounded = Math.round(value * 1000000) / 1000000;
+      return Number.isInteger(rounded) ? String(rounded) : rounded.toString();
+    }
+
+    calcBtn.addEventListener("click", () => {
+      const current = parseFloat(currentEl.value);
+      const resistance = parseFloat(resistanceEl.value);
+      const power = parseFloat(powerEl.value);
+
+      const hasCurrent = Number.isFinite(current);
+      const hasResistance = Number.isFinite(resistance);
+      const hasPower = Number.isFinite(power);
+      const provided = [hasCurrent, hasResistance, hasPower].filter(Boolean).length;
+
+      if (provided < 2) {
+        resultEl.textContent = "Enter any two values: current, resistance, or power.";
+        return;
+      }
+
+      if ((hasCurrent && current <= 0) || (hasResistance && resistance <= 0) || (hasPower && power <= 0)) {
+        resultEl.textContent = "All entered values must be greater than zero.";
+        return;
+      }
+
+      let voltage;
+      let formula;
+
+      if (hasCurrent && hasResistance) {
+        voltage = current * resistance;
+        formula = "V = I x R";
+      } else if (hasPower && hasCurrent) {
+        voltage = power / current;
+        formula = "V = P / I";
+      } else if (hasPower && hasResistance) {
+        voltage = Math.sqrt(power * resistance);
+        formula = "V = sqrt(P x R)";
+      }
+
+      if (!Number.isFinite(voltage)) {
+        resultEl.textContent = "Could not calculate voltage from those values.";
+        return;
+      }
+
+      resultEl.textContent = "Voltage: " + formatNumber(voltage) + " V\nUsing: " + formula;
+    });
+
+    clearBtn.addEventListener("click", () => {
+      currentEl.value = "";
+      resistanceEl.value = "";
+      powerEl.value = "";
+      resultEl.textContent = "";
     });
   }
 
