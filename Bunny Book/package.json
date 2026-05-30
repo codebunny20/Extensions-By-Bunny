@@ -1,0 +1,16 @@
+{
+  "name": "bunny-book",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bunny Book extension TypeScript build tooling",
+  "scripts": {
+    "build": "esbuild src/popup.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/popup.js",
+    "watch": "esbuild src/popup.ts --bundle --format=iife --platform=browser --target=es2020 --outfile=dist/popup.js --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
+  }
+}

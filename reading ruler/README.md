@@ -4,6 +4,27 @@ Reading Ruler adds a horizontal “reading window” that follows your mouse cur
 
 This is the **v1.1 UI rework** with a simple extension popup for controls.
 
+## TypeScript development
+
+This extension now uses TypeScript source files and compiles them into runtime JavaScript.
+
+- Source files:
+  - `src/content.ts`
+  - `src/popup.ts`
+- Build output:
+  - `dist/content.js`
+  - `dist/popup.js`
+
+### Build commands
+
+From the `reading ruler` folder:
+
+- Install dependencies: `npm install`
+- Build once: `npm run build`
+- Watch mode: `npm run watch`
+
+After making changes in `src/`, run `npm run build` and reload the unpacked extension in Chrome.
+
 ## What it does
 
 - **Follows your mouse** vertically with a fixed horizontal band (“ruler”).
@@ -57,8 +78,12 @@ When the ruler is enabled:
 
 ## Files
 - `manifest.json` — Chrome extension manifest (MV3)
-- `content.js` — Overlay + ruler logic, storage sync, and shortcuts
+- `src/content.ts` — TypeScript source for overlay/ruler logic, storage sync, and shortcuts
+- `dist/content.js` — Compiled content script loaded by the extension
 - `popup.html` — Popup UI layout
 - `popup.css` — Popup styling
-- `popup.js` — Popup logic (save/reset/close)
+- `src/popup.ts` — TypeScript source for popup logic (save/reset/close)
+- `dist/popup.js` — Compiled popup script loaded by `popup.html`
+- `tsconfig.json` — TypeScript compiler configuration
+- `package.json` — TypeScript build scripts and dev dependencies
 - `icons/16.png` — Extension icon

@@ -42,6 +42,24 @@ Notes are stored locally via the browser extension storage API (`chrome.storage.
 7. **Delete**
    - Open a note and click **Delete**. You’ll be asked to confirm.
 
+## Development (TypeScript)
+
+Bunny Book now builds from TypeScript source into the popup bundle used by the extension.
+
+1. Install dependencies
+   - `npm install`
+
+2. Build once
+   - `npm run build`
+
+3. Type-check only
+   - `npm run typecheck`
+
+4. Watch and rebuild during development
+   - `npm run watch`
+
+Source files live in `src/` and compile to `dist/popup.js`. The popup loads `dist/popup.js`.
+
 ## Keyboard shortcuts
 
 - **Ctrl + S** (Windows/Linux) / **Cmd + S** (macOS): Save the current note
