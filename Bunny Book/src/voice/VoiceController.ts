@@ -10,7 +10,6 @@ export class VoiceController {
   private recognition: SpeechRecognition | null = null;
   private state: VoiceState = "idle";
   private startToken = 0;
-  private permissionGranted = false;
 
   constructor(private readonly callbacks: VoiceCallbacks) {}
 
@@ -48,12 +47,6 @@ export class VoiceController {
     const token = ++this.startToken;
 
     try {
-      await this.requestMicPermission();
-      if (token !== this.startToken || this.state !== "starting") {
-        this.setIdle("");
-        return;
-      }
-
       const r = this.ensureRecognition();
       if (!r) {
         this.setIdle("Voice typing is not supported in this browser.");
@@ -61,6 +54,11 @@ export class VoiceController {
       }
 
       r.start();
+      if (token !== this.startToken || this.state !== "starting") {
+        this.setIdle("");
+        return;
+      }
+
       this.state = "listening";
       this.callbacks.onListeningChange(true);
       this.callbacks.onStatus("Listening...");
@@ -156,20 +154,6 @@ export class VoiceController {
 
     this.recognition = recognition;
     return recognition;
-  }
-
-  private async requestMicPermission(): Promise<void> {
-    if (this.permissionGranted) {
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      return;
-    }
-
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    stream.getTracks().forEach((track) => track.stop());
-    this.permissionGranted = true;
   }
 
   private setIdle(statusMessage: string): void {

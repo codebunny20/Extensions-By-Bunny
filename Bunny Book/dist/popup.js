@@ -61,7 +61,6 @@
       this.recognition = null;
       this.state = "idle";
       this.startToken = 0;
-      this.permissionGranted = false;
     }
     isSupported() {
       return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -89,17 +88,16 @@
       this.callbacks.onStatus("Listening...");
       const token = ++this.startToken;
       try {
-        await this.requestMicPermission();
-        if (token !== this.startToken || this.state !== "starting") {
-          this.setIdle("");
-          return;
-        }
         const r = this.ensureRecognition();
         if (!r) {
           this.setIdle("Voice typing is not supported in this browser.");
           return;
         }
         r.start();
+        if (token !== this.startToken || this.state !== "starting") {
+          this.setIdle("");
+          return;
+        }
         this.state = "listening";
         this.callbacks.onListeningChange(true);
         this.callbacks.onStatus("Listening...");
@@ -175,17 +173,6 @@
       };
       this.recognition = recognition;
       return recognition;
-    }
-    async requestMicPermission() {
-      if (this.permissionGranted) {
-        return;
-      }
-      if (!navigator.mediaDevices?.getUserMedia) {
-        return;
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      this.permissionGranted = true;
     }
     setIdle(statusMessage) {
       this.state = "idle";
