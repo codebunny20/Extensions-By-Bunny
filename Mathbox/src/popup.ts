@@ -6,6 +6,11 @@
     fromBase: (value: number) => number;
   };
   type UnitCategoryMap = Record<string, Record<string, UnitConfig>>;
+  type HelpDetails = {
+    title: string;
+    usageSteps: string[];
+    methodSteps: string[];
+  };
 
   const getById = <T extends HTMLElement>(id: string): T | null => {
     return document.getElementById(id) as T | null;
@@ -13,18 +18,164 @@
 
   const toolSelect = getById<HTMLSelectElement>("tool-select");
   const toolSections = Array.from(document.querySelectorAll<ToolSection>(".tool-section"));
+  const helpToggle = getById<HTMLButtonElement>("help-toggle");
+  const helpPanel = getById<HTMLElement>("help-panel");
+  const helpTitle = getById<HTMLElement>("help-title");
+  const helpContent = getById<HTMLElement>("help-content");
+  const helpClose = getById<HTMLButtonElement>("help-close");
+
+  const toolHelp: Record<string, HelpDetails> = {
+    calculator: {
+      title: "Standard Calculator",
+      usageSteps: [
+        "Tap number buttons to build an expression.",
+        "Use +, -, *, or / to choose operations.",
+        "Press = to evaluate or C to clear everything."
+      ],
+      methodSteps: [
+        "The input is tokenized into numbers and operators.",
+        "Multiplication and division are solved first from left to right.",
+        "Addition and subtraction are solved next from left to right.",
+        "If division by zero or invalid math occurs, it returns Error."
+      ]
+    },
+    converter: {
+      title: "Unit Converter",
+      usageSteps: [
+        "Choose a category such as length, mass, or temperature.",
+        "Enter the numeric value to convert.",
+        "Pick From and To units, then press Convert."
+      ],
+      methodSteps: [
+        "The value is converted to a base unit using the selected From rule.",
+        "The base value is converted into the target unit using the To rule.",
+        "Temperature uses equations instead of scale factors: C<->F and C<->K.",
+        "The final answer is displayed to 6 decimal places."
+      ]
+    },
+    ratio: {
+      title: "Ratio Calculator",
+      usageSteps: [
+        "Enter the first and second ratio numbers.",
+        "Optionally fill one equivalent value field.",
+        "Press Calculate to simplify and solve missing equivalent values."
+      ],
+      methodSteps: [
+        "The ratio is simplified by scaling decimals and dividing by GCD.",
+        "The unit ratio is shown as 1:(right/left).",
+        "If one equivalent field is provided, proportional scaling solves the other side."
+      ]
+    },
+    ohms: {
+      title: "Quick Ohms Law Tool",
+      usageSteps: [
+        "Enter any two known values among V, I, R, and P.",
+        "Press Calculate to fill all fields.",
+        "Use Clear to reset entries."
+      ],
+      methodSteps: [
+        "Uses Ohm and power relationships: V=IR, P=VI, P=I^2R, P=V^2/R.",
+        "Chooses a formula path based on which two values are provided.",
+        "Computed results are written back into all four fields with 4 decimals."
+      ]
+    },
+    voltage: {
+      title: "Voltage Calculator",
+      usageSteps: [
+        "Enter any two values from current, resistance, and power.",
+        "Press Calculate Voltage.",
+        "Read both the computed voltage and formula used."
+      ],
+      methodSteps: [
+        "If I and R are given: V = I x R.",
+        "If P and I are given: V = P / I.",
+        "If P and R are given: V = sqrt(P x R)."
+      ]
+    },
+    resistor: {
+      title: "Resistor Calculator",
+      usageSteps: [
+        "Enter supply voltage, target voltage, and load current in mA.",
+        "Press Calculate.",
+        "Use the resistance and suggested wattage range shown below."
+      ],
+      methodSteps: [
+        "Voltage drop is Vdrop = Vin - Vtarget.",
+        "Resistance is R = Vdrop / I, where I is current converted from mA to A.",
+        "Power is P = Vdrop x I, then recommended resistor rating is 2x to 4x power."
+      ]
+    },
+    battery: {
+      title: "Battery Calculator",
+      usageSteps: [
+        "Enter per-cell voltage, per-cell current, and battery count.",
+        "Press Calculate.",
+        "Compare the series and parallel totals."
+      ],
+      methodSteps: [
+        "Series: total voltage = cell voltage x count; current stays the same.",
+        "Parallel: voltage stays the same; total current = cell current x count.",
+        "Assumes all batteries are identical and equally rated."
+      ]
+    }
+  };
+
+  let isHelpOpen = false;
 
   if (!toolSelect || toolSections.length === 0) {
     return;
+  }
+
+  const toolSelectEl = toolSelect;
+
+  function renderHelp(tool: string): void {
+    if (!helpTitle || !helpContent) {
+      return;
+    }
+
+    const details = toolHelp[tool] ?? toolHelp.calculator;
+    const usage = details.usageSteps.map((step, index) => (index + 1) + ". " + step).join("\n");
+    const method = details.methodSteps.map((step, index) => (index + 1) + ". " + step).join("\n");
+
+    helpTitle.textContent = details.title + " help";
+    helpContent.textContent = "How to use:\n" + usage + "\n\nHow it calculates or converts:\n" + method;
+  }
+
+  function setHelpOpen(nextOpen: boolean): void {
+    if (!helpPanel || !helpToggle) {
+      return;
+    }
+
+    isHelpOpen = nextOpen;
+    helpPanel.classList.toggle("hidden", !isHelpOpen);
+    helpToggle.textContent = isHelpOpen ? "Hide Help" : "Open Help";
+    helpToggle.setAttribute("aria-expanded", String(isHelpOpen));
+  }
+
+  function initHelpPanel(): void {
+    renderHelp(toolSelectEl.value);
+
+    if (!helpToggle || !helpPanel || !helpClose) {
+      return;
+    }
+
+    helpToggle.addEventListener("click", () => {
+      setHelpOpen(!isHelpOpen);
+    });
+
+    helpClose.addEventListener("click", () => {
+      setHelpOpen(false);
+    });
   }
 
   function switchTool(tool: string): void {
     toolSections.forEach((section) => {
       section.classList.toggle("is-active", section.dataset.tool === tool);
     });
+    renderHelp(tool);
   }
 
-  toolSelect.addEventListener("change", (event) => {
+  toolSelectEl.addEventListener("change", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) {
       return;
@@ -39,7 +190,8 @@
   initVoltageCalculator();
   initResistorCalculator();
   initBatteryCalculator();
-  switchTool(toolSelect.value);
+  initHelpPanel();
+  switchTool(toolSelectEl.value);
 
   function initCalculator(): void {
     const display = getById<HTMLOutputElement>("calc-display");

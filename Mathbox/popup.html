@@ -7,23 +7,42 @@
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
+  <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb-b" aria-hidden="true"></div>
   <main class="app">
     <header class="app-header">
+      <span class="header-badge">Welcome</span>
       <h1>Bunny Mathbox</h1>
-      <p>Calculator and converter tools all in one place.</p>
+      <p>Calculator and converter tools in a modern quick-work panel.</p>
     </header>
 
     <section class="tool-picker">
       <label for="tool-select">Choose tool</label>
       <select id="tool-select">
-        <option value="calculator">Standard Calculator</option>
-        <option value="converter">Unit Converter</option>
+        <optgroup label="Calculators">
+          <option value="calculator">Standard Calculator</option>
           <option value="ratio">Ratio Calculator</option>
-        <option value="ohms">Quick Ohms Law Tool</option>
-        <option value="voltage">Voltage Calculator</option>
-        <option value="resistor">Resistor Calculator</option>
-        <option value="battery">Battery Calculator</option>
+          <option value="ohms">Quick Ohms Law Tool</option>
+          <option value="voltage">Voltage Calculator</option>
+          <option value="resistor">Resistor Calculator</option>
+          <option value="battery">Battery Calculator</option>
+        </optgroup>
+        <optgroup label="Converters">
+          <option value="converter">Unit Converter</option>
+        </optgroup>
       </select>
+
+      <div class="picker-actions">
+        <button type="button" id="help-toggle" class="help-toggle" aria-expanded="false" aria-controls="help-panel">Open Help</button>
+      </div>
+    </section>
+
+    <section id="help-panel" class="help-panel hidden" aria-live="polite">
+      <div class="help-header">
+        <h2 id="help-title">How to use</h2>
+        <button type="button" id="help-close" class="help-close" aria-label="Close help panel">Close</button>
+      </div>
+      <p id="help-content" class="help-content"></p>
     </section>
 
     <section id="tool-calculator" class="tool-section is-active" data-tool="calculator">
