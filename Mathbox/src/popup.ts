@@ -337,19 +337,22 @@
     const unitCategories: UnitCategoryMap = {
       length: {
         m: { name: "Meters", toBase: (v) => v, fromBase: (v) => v },
+        mm: { name: "Millimeters", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
         cm: { name: "Centimeters", toBase: (v) => v / 100, fromBase: (v) => v * 100 },
         km: { name: "Kilometers", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
         in: { name: "Inches", toBase: (v) => v * 0.0254, fromBase: (v) => v / 0.0254 },
         ft: { name: "Feet", toBase: (v) => v * 0.3048, fromBase: (v) => v / 0.3048 },
         yd: { name: "Yards", toBase: (v) => v * 0.9144, fromBase: (v) => v / 0.9144 },
-        mi: { name: "Miles", toBase: (v) => v * 1609.34, fromBase: (v) => v / 1609.34 }
+        mi: { name: "Miles", toBase: (v) => v * 1609.34, fromBase: (v) => v / 1609.34 },
+        nmi: { name: "Nautical miles", toBase: (v) => v * 1852, fromBase: (v) => v / 1852 }
       },
       mass: {
         g: { name: "Grams", toBase: (v) => v, fromBase: (v) => v },
         kg: { name: "Kilograms", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
         mg: { name: "Milligrams", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
         lb: { name: "Pounds", toBase: (v) => v * 453.59237, fromBase: (v) => v / 453.59237 },
-        oz: { name: "Ounces", toBase: (v) => v * 28.3495231, fromBase: (v) => v / 28.3495231 }
+        oz: { name: "Ounces", toBase: (v) => v * 28.3495231, fromBase: (v) => v / 28.3495231 },
+        t: { name: "Metric tons", toBase: (v) => v * 1000000, fromBase: (v) => v / 1000000 }
       },
       temperature: {
         C: { name: "Celsius", toBase: (v) => v, fromBase: (v) => v },
@@ -357,49 +360,81 @@
         K: { name: "Kelvin", toBase: (v) => v - 273.15, fromBase: (v) => v + 273.15 }
       },
       time: {
+        ms: { name: "Milliseconds", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
         s: { name: "Seconds", toBase: (v) => v, fromBase: (v) => v },
         min: { name: "Minutes", toBase: (v) => v * 60, fromBase: (v) => v / 60 },
         h: { name: "Hours", toBase: (v) => v * 3600, fromBase: (v) => v / 3600 },
-        d: { name: "Days", toBase: (v) => v * 86400, fromBase: (v) => v / 86400 }
+        d: { name: "Days", toBase: (v) => v * 86400, fromBase: (v) => v / 86400 },
+        wk: { name: "Weeks", toBase: (v) => v * 604800, fromBase: (v) => v / 604800 }
       },
       data: {
+        bit: { name: "Bits", toBase: (v) => v / 8, fromBase: (v) => v * 8 },
         B: { name: "Bytes", toBase: (v) => v, fromBase: (v) => v },
         KB: { name: "Kilobytes", toBase: (v) => v * 1024, fromBase: (v) => v / 1024 },
         MB: { name: "Megabytes", toBase: (v) => v * 1024 ** 2, fromBase: (v) => v / (1024 ** 2) },
-        GB: { name: "Gigabytes", toBase: (v) => v * 1024 ** 3, fromBase: (v) => v / (1024 ** 3) }
+        GB: { name: "Gigabytes", toBase: (v) => v * 1024 ** 3, fromBase: (v) => v / (1024 ** 3) },
+        TB: { name: "Terabytes", toBase: (v) => v * 1024 ** 4, fromBase: (v) => v / (1024 ** 4) }
       },
       speed: {
         "m/s": { name: "Meters/sec", toBase: (v) => v, fromBase: (v) => v },
         "km/h": { name: "Km/hour", toBase: (v) => v / 3.6, fromBase: (v) => v * 3.6 },
-        mph: { name: "Miles/hour", toBase: (v) => v * 0.44704, fromBase: (v) => v / 0.44704 }
+        mph: { name: "Miles/hour", toBase: (v) => v * 0.44704, fromBase: (v) => v / 0.44704 },
+        knot: { name: "Knots", toBase: (v) => v * 0.514444, fromBase: (v) => v / 0.514444 }
       },
       area: {
         m2: { name: "Square meters", toBase: (v) => v, fromBase: (v) => v },
         cm2: { name: "Square cm", toBase: (v) => v / 10000, fromBase: (v) => v * 10000 },
         km2: { name: "Square km", toBase: (v) => v * 1e6, fromBase: (v) => v / 1e6 },
-        ft2: { name: "Square feet", toBase: (v) => v * 0.092903, fromBase: (v) => v / 0.092903 }
+        ft2: { name: "Square feet", toBase: (v) => v * 0.092903, fromBase: (v) => v / 0.092903 },
+        ha: { name: "Hectares", toBase: (v) => v * 10000, fromBase: (v) => v / 10000 },
+        acre: { name: "Acres", toBase: (v) => v * 4046.8564224, fromBase: (v) => v / 4046.8564224 }
       },
       volume: {
         L: { name: "Liters", toBase: (v) => v, fromBase: (v) => v },
         mL: { name: "Milliliters", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
         gal: { name: "Gallons", toBase: (v) => v * 3.78541, fromBase: (v) => v / 3.78541 },
-        qt: { name: "Quarts", toBase: (v) => v * 0.946353, fromBase: (v) => v / 0.946353 }
+        qt: { name: "Quarts", toBase: (v) => v * 0.946353, fromBase: (v) => v / 0.946353 },
+        m3: { name: "Cubic meters", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
+        floz: { name: "Fluid ounces (US)", toBase: (v) => v * 0.0295735, fromBase: (v) => v / 0.0295735 }
       },
       pressure: {
         Pa: { name: "Pascals", toBase: (v) => v, fromBase: (v) => v },
         kPa: { name: "Kilopascals", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
         bar: { name: "Bar", toBase: (v) => v * 100000, fromBase: (v) => v / 100000 },
-        psi: { name: "PSI", toBase: (v) => v * 6894.76, fromBase: (v) => v / 6894.76 }
+        psi: { name: "PSI", toBase: (v) => v * 6894.76, fromBase: (v) => v / 6894.76 },
+        atm: { name: "Atmospheres", toBase: (v) => v * 101325, fromBase: (v) => v / 101325 }
       },
       energy: {
         J: { name: "Joules", toBase: (v) => v, fromBase: (v) => v },
         kJ: { name: "Kilojoules", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-        cal: { name: "Calories", toBase: (v) => v * 4.184, fromBase: (v) => v / 4.184 }
+        cal: { name: "Calories", toBase: (v) => v * 4.184, fromBase: (v) => v / 4.184 },
+        Wh: { name: "Watt-hours", toBase: (v) => v * 3600, fromBase: (v) => v / 3600 },
+        kWh: { name: "Kilowatt-hours", toBase: (v) => v * 3600000, fromBase: (v) => v / 3600000 }
       },
       power: {
         W: { name: "Watts", toBase: (v) => v, fromBase: (v) => v },
         kW: { name: "Kilowatts", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
-        hp: { name: "Horsepower", toBase: (v) => v * 745.7, fromBase: (v) => v / 745.7 }
+        mW: { name: "Milliwatts", toBase: (v) => v / 1000, fromBase: (v) => v * 1000 },
+        hp: { name: "Horsepower", toBase: (v) => v * 745.7, fromBase: (v) => v / 745.7 },
+        MW: { name: "Megawatts", toBase: (v) => v * 1000000, fromBase: (v) => v / 1000000 }
+      },
+      angle: {
+        deg: { name: "Degrees", toBase: (v) => v, fromBase: (v) => v },
+        rad: { name: "Radians", toBase: (v) => v * (180 / Math.PI), fromBase: (v) => v * (Math.PI / 180) },
+        grad: { name: "Gradians", toBase: (v) => v * 0.9, fromBase: (v) => v / 0.9 }
+      },
+      frequency: {
+        Hz: { name: "Hertz", toBase: (v) => v, fromBase: (v) => v },
+        kHz: { name: "Kilohertz", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
+        MHz: { name: "Megahertz", toBase: (v) => v * 1000000, fromBase: (v) => v / 1000000 },
+        GHz: { name: "Gigahertz", toBase: (v) => v * 1000000000, fromBase: (v) => v / 1000000000 },
+        rpm: { name: "Revolutions/min", toBase: (v) => v / 60, fromBase: (v) => v * 60 }
+      },
+      force: {
+        N: { name: "Newtons", toBase: (v) => v, fromBase: (v) => v },
+        kN: { name: "Kilonewtons", toBase: (v) => v * 1000, fromBase: (v) => v / 1000 },
+        lbf: { name: "Pound-force", toBase: (v) => v * 4.4482216153, fromBase: (v) => v / 4.4482216153 },
+        kgf: { name: "Kilogram-force", toBase: (v) => v * 9.80665, fromBase: (v) => v / 9.80665 }
       }
     };
 
