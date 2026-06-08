@@ -1,0 +1,478 @@
+* {
+	box-sizing: border-box;
+}
+
+:root {
+	--bg-blue: #d7f0ff;
+	--bg-pink: #ffd2e3;
+	--bg-ice: #f8fcff;
+	--text-primary: #20324f;
+	--text-secondary: #51617d;
+	--text-soft: #845a73;
+	--surface: rgba(255, 255, 255, 0.8);
+	--surface-border: rgba(255, 255, 255, 0.9);
+	--surface-shadow: rgba(43, 79, 122, 0.2);
+	--chip-bg: #e8f5ff;
+	--chip-fg: #2f6a9f;
+	--neutral-button: #ebf3fb;
+	--neutral-button-border: rgba(88, 124, 168, 0.25);
+	--accent-start: #72bce8;
+	--accent-end: #f5a9c7;
+	--accent-shadow: rgba(114, 188, 232, 0.32);
+	--stop-bg: #2e4f76;
+	--stop-shadow: rgba(32, 58, 95, 0.28);
+	--pause-bg: #dcecff;
+	--pause-border: rgba(82, 116, 160, 0.3);
+	--focus-ring: #f59bbf;
+	--modal-overlay: rgba(38, 57, 84, 0.45);
+	--toggle-off: #d9e9f7;
+	--toggle-on: #f5a9c7;
+}
+
+body {
+	margin: 0;
+	width: 320px;
+	padding: 18px;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	background:
+		radial-gradient(circle at top left, var(--bg-blue) 0%, transparent 36%),
+		radial-gradient(circle at bottom right, var(--bg-pink) 0%, transparent 42%),
+		linear-gradient(135deg, var(--bg-ice) 0%, #fef7fb 100%);
+	color: var(--text-primary);
+}
+
+h1 {
+	margin: 0;
+	font-size: 22px;
+	line-height: 1.1;
+}
+
+.panelHeader {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+/* Header row with title block and settings gear button. */
+	gap: 12px;
+	margin: -18px -18px 0 -18px;
+	padding: 18px 18px 0 18px;
+}
+
+.gearButton {
+	padding: 6px 8px;
+	min-width: auto;
+	width: auto;
+/* Compact icon button used to open the settings modal. */
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	background: var(--neutral-button);
+	color: var(--text-primary);
+	box-shadow: inset 0 0 0 1px var(--neutral-button-border);
+	margin-top: 0;
+}
+
+.gearButton:hover {
+	background: #f4f9ff;
+}
+
+.panel {
+	padding: 18px;
+	border: 1px solid var(--surface-border);
+	border-radius: 18px;
+/* Shared section title layout used by speed and direction groups. */
+	background: var(--surface);
+	box-shadow: 0 14px 35px var(--surface-shadow);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+}
+
+.eyebrow {
+	margin: 0 0 8px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-soft);
+}
+/* Shared interaction states for all buttons in the popup. */
+
+.subtitle {
+	margin: 10px 0 18px;
+	font-size: 13px;
+	line-height: 1.45;
+	color: var(--text-secondary);
+}
+
+button {
+/* Full-screen overlay behind the settings card. */
+	width: 100%;
+	border: 0;
+	border-radius: 12px;
+	padding: 11px 12px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+
+.controlGroup + .controlGroup {
+	margin-top: 14px;
+}
+
+.sectionHeader {
+	display: flex;
+	align-items: center;
+/* Settings card container shown inside the modal. */
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.speedLabel,
+.sectionLabel {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--text-primary);
+}
+
+.speedBadge {
+	min-width: 34px;
+	padding: 4px 8px;
+/* Custom switch built from a checkbox and a moving knob pseudo-element. */
+	border-radius: 999px;
+	background: var(--chip-bg);
+	color: var(--chip-fg);
+	font-size: 12px;
+	font-weight: 700;
+	text-align: center;
+}
+
+#scrollSpeed {
+	width: 100%;
+	margin: 0;
+	accent-color: var(--accent-start);
+}
+
+.rangeHint {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--text-secondary);
+}
+
+.directionGrid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+}
+
+.directionButton {
+	background: var(--neutral-button);
+	color: var(--text-primary);
+	box-shadow: inset 0 0 0 1px var(--neutral-button-border);
+}
+
+.directionButton.is-active {
+	background: linear-gradient(135deg, var(--accent-start) 0%, var(--accent-end) 100%);
+	color: #ffffff;
+	box-shadow: 0 10px 20px var(--accent-shadow);
+}
+
+.directionButton:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: inset 0 0 0 1px var(--neutral-button-border);
+}
+
+.stopButton {
+	margin-top: 0;
+	background: var(--stop-bg);
+	color: #ffffff;
+	box-shadow: 0 10px 20px var(--stop-shadow);
+}
+
+.actionRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.pauseButton {
+	background: var(--pause-bg);
+	color: var(--text-primary);
+	box-shadow: inset 0 0 0 1px var(--pause-border);
+}
+
+.pauseButton:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	transform: none;
+}
+
+button:hover {
+	opacity: 0.96;
+	transform: translateY(-1px);
+}
+
+button:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+button:active {
+	transform: translateY(0);
+}
+
+.settingsModal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: var(--modal-overlay);
+	z-index: 1000;
+	align-items: center;
+	justify-content: center;
+}
+
+.settingsModal.active {
+	display: flex;
+}
+
+.settingsPanel {
+	background: rgba(255, 255, 255, 0.97);
+	border-radius: 14px;
+	padding: 20px;
+	max-width: 320px;
+	width: min(320px, calc(100vw - 36px));
+	max-height: calc(100vh - 36px);
+	overflow-y: auto;
+	box-shadow: 0 20px 50px rgba(46, 79, 118, 0.28);
+}
+
+.settingsHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+
+.settingsHeader h2 {
+	margin: 0;
+	font-size: 18px;
+	color: var(--text-primary);
+}
+
+.closeButton {
+	width: auto;
+	height: auto;
+	padding: 4px 6px;
+	font-size: 24px;
+	line-height: 1;
+	background: var(--neutral-button);
+	color: var(--text-primary);
+	box-shadow: inset 0 0 0 1px var(--neutral-button-border);
+	margin: 0;
+}
+
+.closeButton:hover {
+	background: #f4f9ff;
+}
+
+.settingItem {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.58);
+	border: 1px solid rgba(88, 124, 168, 0.12);
+}
+
+.settingItem + .settingItem {
+	margin-top: 10px;
+}
+
+.settingsSection + .advancedSettings,
+.settingsSection + .shortcutHint,
+.advancedSettings + .shortcutHint {
+	margin-top: 16px;
+}
+
+.settingsSection {
+	padding: 0 0 4px;
+}
+
+.settingsSectionTitle {
+	margin: 0 0 12px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-soft);
+}
+
+.settingInlineHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.settingItemStack {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+}
+
+.lineDelayHeaderRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+#lineDelay {
+	width: 100%;
+	margin: 0;
+	accent-color: var(--accent-end);
+}
+
+#lineDelay:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.subtleLabel {
+	font-size: 13px;
+	color: var(--text-secondary);
+	font-weight: 600;
+	margin: 0;
+}
+
+.settingHelp {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--text-secondary);
+}
+
+.advancedSettings {
+	border: 1px solid rgba(88, 124, 168, 0.14);
+	border-radius: 14px;
+	padding: 0 12px;
+	background: rgba(232, 245, 255, 0.45);
+}
+
+.advancedSettings > summary {
+	list-style: none;
+	cursor: pointer;
+	padding: 12px 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+
+.advancedSettings > summary::-webkit-details-marker {
+	display: none;
+}
+
+.advancedSettings > summary::after {
+	content: "+";
+	float: right;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--text-soft);
+}
+
+.advancedSettings[open] > summary::after {
+	content: "−";
+}
+
+.advancedContent {
+	padding: 0 0 12px;
+}
+
+.advancedContent .settingItem + .settingItem {
+	margin-top: 12px;
+}
+
+.secondaryButton {
+	margin-top: 16px;
+	background: var(--neutral-button);
+	color: var(--text-primary);
+	box-shadow: inset 0 0 0 1px var(--neutral-button-border);
+}
+
+.doneButton {
+	margin-top: 10px;
+	background: var(--stop-bg);
+	color: #ffffff;
+	box-shadow: 0 10px 20px var(--stop-shadow);
+}
+
+.shortcutHint {
+	margin: 16px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--text-secondary);
+}
+
+.secondaryButton:hover {
+	background: #f4f9ff;
+}
+
+.toggleLabel {
+	font-size: 14px;
+	color: var(--text-primary);
+	font-weight: 600;
+	margin: 0;
+}
+
+.toggleSwitch {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 44px;
+	height: 24px;
+	border-radius: 999px;
+	background: var(--toggle-off);
+	cursor: pointer;
+	position: relative;
+	border: none;
+	padding: 0;
+	transition: background 200ms ease;
+}
+
+.toggleSwitch:checked {
+	background: var(--toggle-on);
+}
+
+.toggleSwitch::before {
+	content: "";
+	position: absolute;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: white;
+	top: 2px;
+	left: 2px;
+	transition: left 200ms ease;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggleSwitch:checked::before {
+	left: 22px;
+}
+
+.toggleSwitch:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}

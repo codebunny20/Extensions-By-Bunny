@@ -1,0 +1,15 @@
+{
+  "name": "auto-scroll-extension",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/popup.ts src/scroll.ts src/background.ts --outdir=dist --format=iife --target=chrome120 --sourcemap",
+    "watch": "esbuild src/popup.ts src/scroll.ts src/background.ts --outdir=dist --format=iife --target=chrome120 --sourcemap --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.275",
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
+  }
+}

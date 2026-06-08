@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Scroll</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Main popup controls for speed, direction, and stop action. -->
+  <main class="panel">
+    <div class="panelHeader">
+      <div>
+        <p class="eyebrow">Auto Scroll</p>
+        <h1>Directional Control</h1>
+      </div>
+      <!-- Opens the settings modal for secondary options. -->
+      <button id="settingsButton" class="gearButton" type="button" aria-label="Settings" title="Settings">
+        ⚙
+      </button>
+    </div>
+    <p class="subtitle">Choose a direction, set the pace, and pause or resume for quick reading breaks.</p>
+
+    <section class="controlGroup" aria-labelledby="speedHeading">
+      <div class="sectionHeader">
+        <label id="speedHeading" class="speedLabel" for="scrollSpeed">Speed</label>
+        <span class="speedBadge" id="speedValue">3</span>
+      </div>
+      <input id="scrollSpeed" type="range" min="1" max="20" step="1" value="3">
+      <p id="speedRangeHint" class="rangeHint">Range: 1x to 20x</p>
+    </section>
+
+    <section class="controlGroup" aria-labelledby="directionHeading">
+      <div class="sectionHeader">
+        <p id="directionHeading" class="sectionLabel">Direction</p>
+      </div>
+      <div class="directionGrid">
+        <button id="scrollUp" class="directionButton" type="button" data-direction="up">Up</button>
+        <button id="scrollLeft" class="directionButton" type="button" data-direction="left">Left</button>
+        <button id="scrollDown" class="directionButton is-active" type="button" data-direction="down">Down</button>
+        <button id="scrollRight" class="directionButton" type="button" data-direction="right">Right</button>
+      </div>
+    </section>
+
+    <div class="actionRow">
+      <button id="pauseResume" class="pauseButton" type="button" disabled>Pause</button>
+      <button id="stopScroll" class="stopButton" type="button">Stop</button>
+    </div>
+  </main>
+
+  <!-- Settings overlay keeps advanced options separate from the main controls. -->
+  <div id="settingsModal" class="settingsModal">
+    <div class="settingsPanel">
+      <div class="settingsHeader">
+        <h2>Settings</h2>
+        <button id="closeSettings" class="closeButton" type="button" aria-label="Close settings">×</button>
+      </div>
+      <div class="settingsSection">
+        <p class="settingsSectionTitle">Essentials</p>
+        <!-- Loop toggle controls whether scrolling restarts at boundaries. -->
+        <div class="settingItem">
+          <label for="loopToggle" class="toggleLabel">Loop at end of page</label>
+          <input id="loopToggle" class="toggleSwitch" type="checkbox">
+        </div>
+        <div class="settingItem settingItemStack">
+          <div class="settingInlineHeader">
+            <label for="slowMoToggle" class="toggleLabel">Slow-mo mode</label>
+            <input id="slowMoToggle" class="toggleSwitch" type="checkbox">
+          </div>
+          <p class="settingHelp">Enable finer control from 0.1x to 0.9x for extra slow reading.</p>
+        </div>
+        <div class="settingItem settingItemStack">
+          <div class="settingInlineHeader">
+            <label for="jumpScrollToggle" class="toggleLabel">Jump scroll mode</label>
+            <input id="jumpScrollToggle" class="toggleSwitch" type="checkbox">
+          </div>
+          <div class="lineDelayHeaderRow">
+            <label for="lineDelay" class="subtleLabel">Line delay</label>
+            <span id="lineDelayValue" class="speedBadge">220 ms</span>
+          </div>
+          <input id="lineDelay" type="range" min="60" max="1200" step="20" value="220">
+          <p class="settingHelp">Line delay controls how long each jump stays on a line.</p>
+        </div>
+      </div>
+      <details class="advancedSettings">
+        <summary>Advanced</summary>
+        <div class="advancedContent">
+          <div class="settingItem">
+            <label for="hardResetToggle" class="toggleLabel">Hard reset on Stop</label>
+            <input id="hardResetToggle" class="toggleSwitch" type="checkbox" checked>
+          </div>
+          <div class="settingItem">
+            <label for="extensionEnabledToggle" class="toggleLabel">Extension enabled</label>
+            <input id="extensionEnabledToggle" class="toggleSwitch" type="checkbox" checked>
+          </div>
+        </div>
+      </details>
+      <p class="shortcutHint">Shortcuts: Ctrl+Shift+S (start/stop), Ctrl+Shift+X (pause/resume), Ctrl+Shift+E (enable/disable)</p>
+      <button id="privacyPolicyButton" class="secondaryButton" type="button">Privacy Policy</button>
+      <button id="doneSettingsButton" class="doneButton" type="button">Done</button>
+    </div>
+  </div>
+  <script src="dist/popup.js"></script>
+</body>
+</html>
