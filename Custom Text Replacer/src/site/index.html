@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Mini Text Blaze Editor</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
+      textarea, input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+      .row { display:flex; gap:8px; }
+      .col { flex:1; }
+    </style>
+  </head>
+  <body>
+    <h1>Mini Text Blaze Editor</h1>
+    <p>Open this page while the extension is installed. Click <strong>Load</strong> to fetch snippets from the extension, edit, then click <strong>Save</strong> to push them back.</p>
+    <div>
+      <button id="load">Load</button>
+      <button id="save">Save</button>
+      <button id="export">Export JSON</button>
+    </div>
+    <div style="margin-top:12px;">
+      <textarea id="json" rows="18" placeholder='{"\/ty":"Thank you..."}'></textarea>
+    </div>
+    <script type="module" src="site.js"></script>
+  </body>
+</html>

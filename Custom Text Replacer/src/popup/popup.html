@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; padding: 12px; width: 320px; }
+      input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
+      ul { padding-left: 16px; max-height: 200px; overflow: auto; }
+      li { margin-bottom: 6px; }
+      .shortcut { font-weight: bold; margin-right: 8px; }
+      button { margin-right: 6px; }
+    </style>
+  </head>
+  <body>
+    <h3>Snippets</h3>
+    <input id="shortcut" placeholder="/ty" />
+    <textarea id="text" rows="4" placeholder="Snippet text"></textarea>
+    <div>
+      <button id="save">Save</button>
+      <button id="export">Export</button>
+      <button id="importBtn">Import</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none" />
+    </div>
+    <ul id="list"></ul>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

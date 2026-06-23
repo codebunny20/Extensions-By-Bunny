@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "ES2015",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "sourceMap": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": ["chrome"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules"]
