@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Show Page Text test",
+  "name": "Reading zone text",
   "version": "1.0.0",
   "permissions": ["scripting", "activeTab", "storage", "downloads", "contextMenus"],
   "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_title": "Show page text" },
+  "background": { "service_worker": "background/background.js" },
+  "action": { "default_title": "Reading zone text" },
   "web_accessible_resources": [
     {
-      "resources": ["viewer.html", "viewer.css", "viewer.js"],
+      "resources": ["viewer/viewer.html", "viewer/viewer.css", "viewer/viewer.js"],
       "matches": ["<all_urls>"]
     }
   ]

@@ -36,7 +36,7 @@ async function openViewerWithText(text) {
   const id = `viewer_text_${Date.now()}`;
   try {
     await chrome.storage.local.set({ [id]: text });
-    const url = chrome.runtime.getURL(`viewer.html?id=${encodeURIComponent(id)}`);
+    const url = chrome.runtime.getURL(`viewer/viewer.html?id=${encodeURIComponent(id)}`);
     chrome.tabs.create({ url });
   } catch (e) {
     console.error("Storage or open viewer failed, falling back to download", e);

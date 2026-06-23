@@ -2,11 +2,11 @@
   /* Darker transfem color palette */
   --pink: #c026d3;
   --cyan: #0891b2;
-  --white: #ffffff;
-  --light-bg: #faf5ff;
-  --text: #1f2937;
+  --white: #160f0f;
+  --light-bg: #1c0930;
+  --text: #e9edf2;
   --muted: #6b7280;
-  --border: #e5e7eb;
+  --border: #bebbc0;
   --radius: 8px;
 }
 
