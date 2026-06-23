@@ -1,10 +1,12 @@
 import { SnippetMap, SnippetMessage } from "../types/snippets";
 
 let snippets: SnippetMap = {};
+let isReady = false;
 
-// Load initial snippets from storage
+// Load initial snippets and mark as ready
 chrome.storage.sync.get("snippets", ({ snippets: s }) => {
   snippets = (s as SnippetMap) || {};
+  isReady = true;  // NOW we're ready
 });
 
 // Keep snippets updated
@@ -14,8 +16,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Core expansion logic
+// Only attach listener AFTER storage loads
 document.addEventListener("keydown", (e: KeyboardEvent) => {
+  if (!isReady) return;  // Ignore until ready
+  
   const target = e.target as HTMLElement | null;
   if (!target || !isEditable(target)) return;
 

@@ -9,7 +9,9 @@ const dist = path.join(root, "dist");
 const copies = [
   ["manifest.json",          "manifest.json"],
   ["src/popup/popup.html",   "popup/popup.html"],
+  ["src/popup/popup.css",    "popup/popup.css"],
   ["src/site/index.html",    "site/index.html"],
+  ["src/site/style.css",     "site/style.css"],
 ];
 
 for (const [src, dest] of copies) {

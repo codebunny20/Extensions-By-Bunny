@@ -1,7 +1,9 @@
 let snippets = {};
-// Load initial snippets from storage
+let isReady = false;
+// Load initial snippets and mark as ready
 chrome.storage.sync.get("snippets", ({ snippets: s }) => {
     snippets = s || {};
+    isReady = true; // NOW we're ready
 });
 // Keep snippets updated
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -9,8 +11,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
         snippets = changes.snippets.newValue || {};
     }
 });
-// Core expansion logic
+// Only attach listener AFTER storage loads
 document.addEventListener("keydown", (e) => {
+    if (!isReady)
+        return; // Ignore until ready
     const target = e.target;
     if (!target || !isEditable(target))
         return;
