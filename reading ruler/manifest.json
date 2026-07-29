@@ -1,9 +1,9 @@
 {
     "manifest_version": 3,
     "name": "Reading Ruler",
-    "version": "1.1",
+    "version": "1.2",
     "description": "A horizontal reading ruler that follows your mouse to improve readability.",
-    "permissions": ["storage"],
+    "permissions": ["storage", "tabs"],
     "action": {
       "default_popup": "popup.html",
       "default_title": "Reading Ruler"

@@ -9,33 +9,122 @@
 <body>
 	<main>
 		<section class="panel" aria-label="Reading ruler settings">
-			<h1>Reading Ruler</h1>
-			<p class="subtitle">Simple focus line controls</p>
+			<header class="hero">
+				<div>
+					<p class="eyebrow">Reading Tools</p>
+					<h1>Reading Ruler</h1>
+					<p class="subtitle">Guide the eye, dim distractions, and read selected text aloud.</p>
+				</div>
+				<div class="hero-orb" aria-hidden="true"></div>
+			</header>
 
-			<div class="row inline">
-				<label for="enabled">Enable ruler</label>
-				<input id="enabled" type="checkbox" />
-			</div>
+			<section class="card" aria-labelledby="rulerHeading">
+				<div class="card-header">
+					<div>
+						<p class="card-kicker">Focus Line</p>
+						<h2 id="rulerHeading">Visual guide</h2>
+					</div>
+					<label class="switch" for="enabled" aria-label="Enable ruler">
+						<input id="enabled" type="checkbox" />
+						<span class="switch-track"><span class="switch-thumb"></span></span>
+					</label>
+				</div>
 
-			<div class="row">
-				<label for="height">Ruler height</label>
-				<div id="heightValue" class="value">32px</div>
-				<input id="height" type="range" min="8" max="240" step="4" value="32" />
-			</div>
+				<div class="metric-grid">
+					<div class="metric-chip">
+						<span class="metric-label">Height</span>
+						<strong id="heightValue" class="metric-value">32px</strong>
+					</div>
+					<div class="metric-chip">
+						<span class="metric-label">Dim</span>
+						<strong id="dimValue" class="metric-value">40%</strong>
+					</div>
+				</div>
 
-			<div class="row">
-				<label for="dim">Dim strength</label>
-				<div id="dimValue" class="value">40%</div>
-				<input id="dim" type="range" min="5" max="95" step="5" value="40" />
-			</div>
+				<div class="control-group">
+					<div class="control-topline">
+						<label for="height">Ruler height</label>
+						<span class="control-note">Tracks your reading line</span>
+					</div>
+					<input id="height" type="range" min="8" max="240" step="4" value="32" />
+				</div>
+
+				<div class="control-group">
+					<div class="control-topline">
+						<label for="dim">Dim strength</label>
+						<span class="control-note">Darkens surrounding text</span>
+					</div>
+					<input id="dim" type="range" min="5" max="95" step="5" value="40" />
+				</div>
+			</section>
+
+			<section id="ttsPanel" class="card card-voice" aria-labelledby="ttsHeading">
+				<div class="card-header">
+					<div>
+						<p class="card-kicker">Read Aloud</p>
+						<h2 id="ttsHeading">Text to speech</h2>
+					</div>
+					<label class="switch" for="ttsEnabled" aria-label="Enable TTS">
+						<input id="ttsEnabled" type="checkbox" />
+						<span class="switch-track"><span class="switch-thumb"></span></span>
+					</label>
+				</div>
+
+				<label class="toggle-row" for="autoSpeak">
+					<span>
+						<strong>Auto speak selection</strong>
+						<small>Start speaking when new text is highlighted.</small>
+					</span>
+					<span class="switch compact">
+						<input id="autoSpeak" type="checkbox" />
+						<span class="switch-track"><span class="switch-thumb"></span></span>
+					</span>
+				</label>
+
+				<div class="control-group">
+					<div class="control-topline">
+						<label for="ttsRate">Speech rate</label>
+						<strong id="ttsRateValue" class="value-pill">1.00x</strong>
+					</div>
+					<input id="ttsRate" type="range" min="50" max="200" step="5" value="100" />
+				</div>
+
+				<div class="triple-grid">
+					<div class="control-group compact-group">
+						<div class="control-topline">
+							<label for="ttsPitch">Pitch</label>
+							<strong id="ttsPitchValue" class="value-pill">1.00</strong>
+						</div>
+						<input id="ttsPitch" type="range" min="0" max="200" step="5" value="100" />
+					</div>
+
+					<div class="control-group compact-group">
+						<div class="control-topline">
+							<label for="ttsVolume">Volume</label>
+							<strong id="ttsVolumeValue" class="value-pill">100%</strong>
+						</div>
+						<input id="ttsVolume" type="range" min="0" max="100" step="5" value="100" />
+					</div>
+				</div>
+
+				<div class="action-row">
+					<button id="speakBtn" class="primary action-main" type="button">Speak Selection</button>
+					<button id="stopBtn" class="ghost action-side" type="button">Stop</button>
+				</div>
+
+				<p id="ttsStatus" class="status" aria-live="polite">Select text on a page and click Speak Selection.</p>
+			</section>
+
+			<section class="shortcut-bar" aria-label="Shortcuts and tips">
+				<div class="shortcut-pill"><span>Toggle ruler</span><kbd>Ctrl+Shift+R</kbd></div>
+				<div class="shortcut-pill"><span>Speak selection</span><kbd>Ctrl+Shift+S</kbd></div>
+				<div class="shortcut-pill"><span>Close popup</span><kbd>Esc</kbd></div>
+			</section>
 
 			<div class="footer">
-				<button id="resetBtn" class="ghost" type="button">Reset</button>
-				<button id="closeBtn" class="primary" type="button">Close</button>
+				<button id="resetBtn" class="ghost" type="button">Reset All</button>
+				<button id="closeBtn" class="primary" type="button">Done</button>
 			</div>
-
-			<p class="hint">Shortcut support still works: Ctrl+Shift+R and arrows.</p>
-			<p class="hint">Press Esc to close this popup.</p>
 		</section>
 	</main>
 	<script src="dist/popup.js"></script>

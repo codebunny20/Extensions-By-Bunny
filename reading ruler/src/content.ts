@@ -9,25 +9,48 @@ if (window.__readingRulerInjected) {
     enabled: boolean;
     rulerHeight: number;
     dimStrength: number;
+    ttsEnabled: boolean;
+    autoSpeakSelection: boolean;
+    ttsRate: number;
+    ttsPitch: number;
+    ttsVolume: number;
   }
 
   const DEFAULTS: RulerSettings = {
     enabled: false,
     rulerHeight: 32,
     dimStrength: 0.4,
+    ttsEnabled: false,
+    autoSpeakSelection: false,
+    ttsRate: 1,
+    ttsPitch: 1,
+    ttsVolume: 1,
   };
 
   const MIN_RULER_HEIGHT = 8;
   const MAX_RULER_HEIGHT = 240;
   const MIN_DIM_STRENGTH = 0.05;
   const MAX_DIM_STRENGTH = 0.95;
+  const MIN_TTS_RATE = 0.5;
+  const MAX_TTS_RATE = 2;
+  const MIN_TTS_PITCH = 0;
+  const MAX_TTS_PITCH = 2;
+  const MIN_TTS_VOLUME = 0;
+  const MAX_TTS_VOLUME = 1;
 
   let rulerEnabled = DEFAULTS.enabled;
   let rulerHeight = DEFAULTS.rulerHeight;
   let dimStrength = DEFAULTS.dimStrength;
+  let ttsEnabled = DEFAULTS.ttsEnabled;
+  let autoSpeakSelection = DEFAULTS.autoSpeakSelection;
+  let ttsRate = DEFAULTS.ttsRate;
+  let ttsPitch = DEFAULTS.ttsPitch;
+  let ttsVolume = DEFAULTS.ttsVolume;
   let lastYCenter = Math.round(window.innerHeight / 2);
   let animationFrameId = 0;
   let showHintTimer: number | undefined;
+  let autoSpeakTimer: number | undefined;
+  let lastAutoSpokenText = "";
 
   const rootNode = document.body ?? document.documentElement;
 
@@ -108,7 +131,111 @@ if (window.__readingRulerInjected) {
         typeof candidate.dimStrength === "number"
           ? clamp(candidate.dimStrength, MIN_DIM_STRENGTH, MAX_DIM_STRENGTH)
           : DEFAULTS.dimStrength,
+      ttsEnabled:
+        typeof candidate.ttsEnabled === "boolean" ? candidate.ttsEnabled : DEFAULTS.ttsEnabled,
+      autoSpeakSelection:
+        typeof candidate.autoSpeakSelection === "boolean"
+          ? candidate.autoSpeakSelection
+          : DEFAULTS.autoSpeakSelection,
+      ttsRate:
+        typeof candidate.ttsRate === "number"
+          ? clamp(candidate.ttsRate, MIN_TTS_RATE, MAX_TTS_RATE)
+          : DEFAULTS.ttsRate,
+      ttsPitch:
+        typeof candidate.ttsPitch === "number"
+          ? clamp(candidate.ttsPitch, MIN_TTS_PITCH, MAX_TTS_PITCH)
+          : DEFAULTS.ttsPitch,
+      ttsVolume:
+        typeof candidate.ttsVolume === "number"
+          ? clamp(candidate.ttsVolume, MIN_TTS_VOLUME, MAX_TTS_VOLUME)
+          : DEFAULTS.ttsVolume,
     };
+  }
+
+  function stopSpeech(): void {
+    if (typeof speechSynthesis !== "undefined") {
+      speechSynthesis.cancel();
+    }
+  }
+
+  function getSelectedText(): string {
+    const selected = document.getSelection()?.toString().trim();
+    if (selected) {
+      return selected;
+    }
+
+    const activeElement = document.activeElement;
+    const isTextInput =
+      activeElement instanceof HTMLInputElement &&
+      /^(text|search|url|tel|password|email)$/i.test(activeElement.type);
+
+    if (activeElement instanceof HTMLTextAreaElement || isTextInput) {
+      const input = activeElement as HTMLTextAreaElement | HTMLInputElement;
+      const start = input.selectionStart ?? 0;
+      const end = input.selectionEnd ?? 0;
+      if (end > start) {
+        return input.value.slice(start, end).trim();
+      }
+    }
+
+    return "";
+  }
+
+  interface TtsResponse {
+    ok: boolean;
+    message: string;
+  }
+
+  function speakText(text: string): TtsResponse {
+    if (!ttsEnabled) {
+      return { ok: false, message: "TTS is disabled." };
+    }
+
+    if (typeof speechSynthesis === "undefined") {
+      return { ok: false, message: "Speech synthesis is not supported on this page." };
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = ttsRate;
+    utterance.pitch = ttsPitch;
+    utterance.volume = ttsVolume;
+
+    stopSpeech();
+    speechSynthesis.speak(utterance);
+    return { ok: true, message: "Speaking selected text." };
+  }
+
+  function speakSelectedText(): TtsResponse {
+    const text = getSelectedText();
+    if (!text) {
+      return { ok: false, message: "Select text to speak." };
+    }
+
+    return speakText(text);
+  }
+
+  function scheduleAutoSpeak(): void {
+    if (!ttsEnabled || !autoSpeakSelection) {
+      return;
+    }
+
+    if (autoSpeakTimer !== undefined) {
+      clearTimeout(autoSpeakTimer);
+    }
+
+    autoSpeakTimer = window.setTimeout(() => {
+      autoSpeakTimer = undefined;
+      const selectedText = getSelectedText();
+
+      if (!selectedText || selectedText === lastAutoSpokenText) {
+        return;
+      }
+
+      const result = speakText(selectedText);
+      if (result.ok) {
+        lastAutoSpokenText = selectedText;
+      }
+    }, 200);
   }
 
   function showHint(text: string): void {
@@ -175,9 +302,25 @@ if (window.__readingRulerInjected) {
 
   function applySettings(nextSettings: unknown): void {
     const safe = normalizeSettings(nextSettings);
+    const wasTtsEnabled = ttsEnabled;
 
     rulerHeight = safe.rulerHeight;
     dimStrength = safe.dimStrength;
+    ttsEnabled = safe.ttsEnabled;
+    autoSpeakSelection = safe.autoSpeakSelection;
+    ttsRate = safe.ttsRate;
+    ttsPitch = safe.ttsPitch;
+    ttsVolume = safe.ttsVolume;
+
+    if (wasTtsEnabled && !ttsEnabled) {
+      stopSpeech();
+      lastAutoSpokenText = "";
+    }
+
+    if (!autoSpeakSelection) {
+      lastAutoSpokenText = "";
+    }
+
     renderOverlayStyle();
     setEnabled(safe.enabled);
   }
@@ -193,6 +336,11 @@ if (window.__readingRulerInjected) {
       enabled: rulerEnabled,
       rulerHeight,
       dimStrength,
+      ttsEnabled,
+      autoSpeakSelection,
+      ttsRate,
+      ttsPitch,
+      ttsVolume,
     };
 
     chrome.storage.sync.set({
@@ -226,6 +374,32 @@ if (window.__readingRulerInjected) {
     scheduleRulerRender();
   });
 
+  document.addEventListener("selectionchange", () => {
+    scheduleAutoSpeak();
+  });
+
+  chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+    if (!message || typeof message !== "object") {
+      return;
+    }
+
+    const action = (message as { type?: string }).type;
+
+    if (action === "SPEAK_SELECTION") {
+      const result = speakSelectedText();
+      if (!result.ok) {
+        showHint(result.message);
+      }
+      sendResponse(result);
+      return;
+    }
+
+    if (action === "STOP_SPEECH") {
+      stopSpeech();
+      sendResponse({ ok: true, message: "Speech stopped." } as TtsResponse);
+    }
+  });
+
   // Keep keyboard controls as a quick-access alternative.
   document.addEventListener("keydown", (event) => {
     if (!(event.ctrlKey && event.shiftKey)) {
@@ -238,6 +412,13 @@ if (window.__readingRulerInjected) {
       setEnabled(!rulerEnabled);
       persistCurrentSettings();
       showHint(rulerEnabled ? "Reading Ruler on" : "Reading Ruler off");
+      return;
+    }
+
+    if (key === "s") {
+      event.preventDefault();
+      const result = speakSelectedText();
+      showHint(result.message);
       return;
     }
 
