@@ -1,4 +1,0 @@
-body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; }
-textarea, input { width: 100%; box-sizing: border-box; margin-bottom: 8px; }
-.row { display:flex; gap:8px; }
-.col { flex:1; }
